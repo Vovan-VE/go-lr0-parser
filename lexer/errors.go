@@ -5,15 +5,13 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
+	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
 var (
 	// ErrNegativeOffset will be raised by panic if some operation with State
 	// cause negative offset
 	ErrNegativeOffset = errors.New("negative position")
-	// ErrDefine will be raised by panic in case of invalid definition in a
-	// Lexer
-	ErrDefine = errors.New("invalid definition")
 )
 var (
 	// ErrParse is base error for run-time errors about parsing.
@@ -46,14 +44,7 @@ func WithSource(err error, s *State) error {
 	}
 }
 
-func dumpT(id Term, t Terminal) string {
-	if s := t.Name(); s != "" {
-		return s
-	}
-	return fmt.Sprintf("#%v", id)
-}
-
-func expectationError(expected []Term, terminals termMap) error {
+func expectationError(expected []symbol.Id, terminals termMap) error {
 	s := "expected "
 	last := len(expected) - 1
 	for i, id := range expected {
@@ -64,7 +55,7 @@ func expectationError(expected []Term, terminals termMap) error {
 				s += " or "
 			}
 		}
-		s += dumpT(id, terminals[id])
+		s += symbol.Dump(terminals[id])
 	}
 	return NewParseError(s)
 }

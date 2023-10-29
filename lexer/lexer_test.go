@@ -6,17 +6,19 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/internal/testutils"
+	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
 func TestLexer_Add(t *testing.T) {
 	const (
-		tIdent Term = iota + 1
+		tIdent symbol.Id = iota + 1
 		tPlus
 		tMinus
 	)
 
-	l := New()
-	l.Add(tIdent, Name("Identifier", NewFunc(matchIdentifier)))
+	l := New(
+		Name("Identifier", NewFunc(tIdent, matchIdentifier)),
+	).(*lexer)
 	if len(l.terminals) != 1 {
 		t.Errorf("where is it? %#v", l.terminals)
 	}
@@ -24,76 +26,42 @@ func TestLexer_Add(t *testing.T) {
 		t.Errorf("name %q don't match - %#v", x.Name(), x)
 	}
 
-	m := l.
-		Add(tPlus, Name("Plus", NewFixedStr("+"))).
-		Add(tMinus, Name("Minus", NewFixedStr("-")))
-	if m != l {
-		t.Error("it's something else")
-	}
-
+	l = New(
+		Name("Identifier", NewFunc(tIdent, matchIdentifier)),
+		Name("Plus", NewFixedStr(tPlus, "+")),
+		Name("Minus", NewFixedStr(tMinus, "-")),
+	).(*lexer)
 	if len(l.terminals) != 3 {
 		t.Errorf("what just happened? %#v", l.terminals)
 	}
 
 	t.Run("panic", func(t *testing.T) {
-		defer testutils.ExpectPanicError(t, ErrDefine)
-		l.Add(tPlus, NewFixedStr("+="))
-	})
-}
-
-func TestLexer_AddMap(t *testing.T) {
-	const (
-		tIdent Term = iota + 1
-		tPlusAssign
-		tPlus
-		tMinusAssign
-		tMinus
-		tDiv
-	)
-
-	l := NewFromMap(termMap{
-		tIdent: Name("Identifier", NewFunc(matchIdentifier)),
-		tPlus:  Name("Plus", NewFixedStr("+")),
-		tMinus: Name("Minus", NewFixedStr("-")),
-	})
-	if len(l.terminals) != 3 {
-		t.Errorf("where are they? %#v", l.terminals)
-	}
-
-	l.AddMap(map[Term]Terminal{
-		tPlusAssign:  Name("PlusAssign", NewFixedStr("+=")),
-		tMinusAssign: Name("MinusAssign", NewFixedStr("-=")),
-	})
-	if len(l.terminals) != 5 {
-		t.Errorf("what now? %#v", l.terminals)
-	}
-
-	t.Run("panic", func(t *testing.T) {
-		defer testutils.ExpectPanicError(t, ErrDefine)
-		l.AddMap(map[Term]Terminal{
-			tDiv:        Name("Div", NewFixedStr("/")),
-			tPlusAssign: Name("PlusAssign dupe", NewFixedStr("+=")),
-		})
+		defer testutils.ExpectPanicError(t, symbol.ErrDefine)
+		New(
+			NewFixedStr(tPlus, "+"),
+			NewFixedStr(tPlus, "+="),
+		)
 	})
 }
 
 func TestLexer_Match(t *testing.T) {
 	const (
-		tInt Term = iota + 1
+		tInt symbol.Id = iota + 1
 		tPlus
 		tMinus
 		tInc
 	)
 
-	l := New().
-		Add(tInt, Name("Int", NewFunc(matchDigits))).
-		Add(tPlus, Name("Plus", NewFixedStr("+"))).
-		Add(tMinus, Name("Minus", NewFixedStr("-"))).
-		Add(tInc, Name("Increment", NewFixedStr("++")))
+	l := New(
+		Name("Int", NewFunc(tInt, matchDigits)),
+		Name("Plus", NewFixedStr(tPlus, "+")),
+		Name("Minus", NewFixedStr(tMinus, "-")),
+		Name("Increment", NewFixedStr(tInc, "++")),
+	)
 
 	start := NewState([]byte("38+23-19++"))
 
-	a, m, err := l.Match(start, []Term{tInt})
+	a, m, err := l.Match(start, []symbol.Id{tInt})
 	if err != nil {
 		t.Fatalf("a: match failed: %+v", err)
 	}
@@ -107,7 +75,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("a: offset", a.Offset())
 	}
 
-	b, m, err := l.Match(a, []Term{tPlus, tMinus})
+	b, m, err := l.Match(a, []symbol.Id{tPlus, tMinus})
 	if err != nil {
 		t.Fatalf("b: match failed: %+v", err)
 	}
@@ -118,7 +86,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("b: offset", b.Offset())
 	}
 
-	c, m, err := l.Match(b, []Term{tInt})
+	c, m, err := l.Match(b, []symbol.Id{tInt})
 	if err != nil {
 		t.Fatalf("c: match failed: %+v", err)
 	}
@@ -129,7 +97,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("c: offset", c.Offset())
 	}
 
-	d, m, err := l.Match(c, []Term{tPlus, tMinus})
+	d, m, err := l.Match(c, []symbol.Id{tPlus, tMinus})
 	if err != nil {
 		t.Fatalf("d: match failed: %+v", err)
 	}
@@ -140,7 +108,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("d: offset", d.Offset())
 	}
 
-	e, m, err := l.Match(d, []Term{tInt})
+	e, m, err := l.Match(d, []symbol.Id{tInt})
 	if err != nil {
 		t.Fatalf("e: match failed: %+v", err)
 	}
@@ -152,7 +120,7 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// ++ first, then +
-	f1, m, err := l.Match(e, []Term{tInc, tPlus})
+	f1, m, err := l.Match(e, []symbol.Id{tInc, tPlus})
 	if err != nil {
 		t.Fatalf("f1: match failed: %+v", err)
 	}
@@ -164,7 +132,7 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// + first, then ++
-	f2, m, err := l.Match(e, []Term{tPlus, tInc})
+	f2, m, err := l.Match(e, []symbol.Id{tPlus, tInc})
 	if err != nil {
 		t.Fatalf("f2: match failed: %+v", err)
 	}
@@ -176,7 +144,7 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// no match
-	_, _, err = l.Match(e, []Term{tMinus, tInt})
+	_, _, err = l.Match(e, []symbol.Id{tMinus, tInt})
 	if !errors.Is(err, ErrParse) {
 		t.Fatal("no expected: wrong error", err)
 	}
@@ -195,7 +163,7 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// EOF
-	_, _, err = l.Match(start.to(9000), []Term{tInt, tPlus, tMinus, tInc})
+	_, _, err = l.Match(start.to(9000), []symbol.Id{tInt, tPlus, tMinus, tInc})
 	if !errors.Is(err, ErrParse) {
 		t.Fatal("eof: wrong error", err)
 	}

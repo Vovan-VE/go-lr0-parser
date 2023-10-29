@@ -2,10 +2,14 @@ package lexer
 
 import (
 	"testing"
+
+	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
+const tTemp symbol.Id = 17
+
 func TestFixed_Match(t *testing.T) {
-	spaceship := NewFixed([]byte{'<', '=', '>'})
+	spaceship := NewFixed(tTemp, []byte{'<', '=', '>'})
 
 	state := NewState([]byte("42 <=> 37"))
 
@@ -34,7 +38,7 @@ func TestFixed_Match(t *testing.T) {
 }
 
 func TestFixedStr_Match(t *testing.T) {
-	spaceship := NewFixedStr("<=>")
+	spaceship := NewFixedStr(tTemp, "<=>")
 
 	state := NewState([]byte("42 <=> 37"))
 
@@ -63,7 +67,7 @@ func TestFixedStr_Match(t *testing.T) {
 }
 
 func TestFunc_Match(t *testing.T) {
-	tIdent := NewFunc(matchIdentifier)
+	tIdent := NewFunc(tTemp, matchIdentifier)
 
 	a := NewState(source)
 
@@ -126,7 +130,7 @@ func isAlpha(b byte) bool {
 func isDigit(b byte) bool { return b >= '0' && b <= '9' }
 
 func TestName(t *testing.T) {
-	a := NewFunc(matchIdentifier)
+	a := NewFunc(tTemp, matchIdentifier)
 	const name = "T_IDENT"
 	b := Name(name, a)
 
@@ -139,7 +143,7 @@ func TestName(t *testing.T) {
 }
 
 func TestHide(t *testing.T) {
-	a := NewFunc(matchIdentifier)
+	a := NewFunc(tTemp, matchIdentifier)
 	b := Hide(a)
 	if a.IsHidden() {
 		t.Error("a is hidden")

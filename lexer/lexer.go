@@ -2,66 +2,70 @@ package lexer
 
 import (
 	"github.com/pkg/errors"
+	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
-type termMap = map[Term]Terminal
+// Lexer does search predefined Terminals in an input stream.
+type Lexer interface {
+	// IsTerminal returns true if the given Id is one of defined Terminal
+	IsTerminal(id symbol.Id) bool
+	// GetTerminalIdsSet returns new set of all defined Id
+	GetTerminalIdsSet() symbol.SetOfId
+	// Match tries to parse one of expected Terminals in the given State.
+	//
+	// Order in `expected` does matter. First matched Terminal will be returned in
+	// Match with next State for further parsing.
+	//
+	// At EOF or when none of `expected` Terminals matched, a ErrParse wrapped error
+	// will be returned.
+	Match(state *State, expected []symbol.Id) (next *State, m *Match, err error)
+}
 
-// Lexer describes a set of possible Terminal to parse any appropriate input
-// into defined Terminal tokens
-type Lexer struct {
+type termMap = map[symbol.Id]Terminal
+
+type lexer struct {
 	terminals termMap
 }
 
-// New creates a new empty Lexer
-func New() *Lexer {
-	return &Lexer{}
-}
-
-// NewFromMap creates new Lexer with all the given Terminals already defined
-func NewFromMap(m termMap) *Lexer {
-	return &Lexer{terminals: m}
-}
-
-func (l *Lexer) init() {
-	if l.terminals == nil {
-		l.terminals = make(termMap)
+// New creates a new empty Configurable
+func New(t ...Terminal) Lexer {
+	l := &lexer{
+		terminals: make(termMap),
 	}
-}
-
-// Add adds a Terminal definition and returns the Lexer itself for chaining
-func (l *Lexer) Add(id Term, t Terminal) *Lexer {
-	l.init()
-	l.add(id, t)
-	return l
-}
-
-// AddMap adds multiple Terminals and returns the Lexer itself for chaining
-func (l *Lexer) AddMap(m termMap) *Lexer {
-	l.init()
-	for id, t := range m {
-		l.add(id, t)
+	for _, ti := range t {
+		l.add(ti)
 	}
 	return l
 }
 
-func (l *Lexer) add(id Term, t Terminal) {
+func (l *lexer) add(t Terminal) {
+	id := t.Id()
+	if id == symbol.InvalidId {
+		panic(errors.Wrap(symbol.ErrDefine, "zero id"))
+	}
 	if prev, exists := l.terminals[id]; exists {
 		if prev == t {
 			return
 		}
-		panic(errors.Wrapf(ErrDefine, "redefine terminal %v with %v", dumpT(id, prev), dumpT(id, t)))
+		panic(errors.Wrapf(symbol.ErrDefine, "redefine terminal %v with %v", symbol.Dump(prev), symbol.Dump(t)))
 	}
 	l.terminals[id] = t
 }
 
-// Match tries to parse one of expected Terminals in the given State.
-//
-// Order in `expected` does matter. First matched Terminal will be returned in
-// Match with next State for further parsing.
-//
-// At EOF or when none of `expected` Terminals matched, a ErrParse wrapped error
-// will be returned.
-func (l *Lexer) Match(state *State, expected []Term) (next *State, m *Match, err error) {
+func (l *lexer) IsTerminal(id symbol.Id) bool {
+	_, ok := l.terminals[id]
+	return ok
+}
+
+func (l *lexer) GetTerminalIdsSet() symbol.SetOfId {
+	m := symbol.NewSetOfId()
+	for id := range l.terminals {
+		m.Add(id)
+	}
+	return m
+}
+
+func (l *lexer) Match(state *State, expected []symbol.Id) (next *State, m *Match, err error) {
 	if !state.IsEOF() {
 		var (
 			t     Terminal

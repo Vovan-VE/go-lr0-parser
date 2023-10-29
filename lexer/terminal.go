@@ -1,5 +1,9 @@
 package lexer
 
+import (
+	"github.com/vovan-ve/go-lr0-parser/symbol"
+)
+
 // ToValue returns either a value for parsed token, or `error`. Valid value
 // cannot be `error`. May return input slice too.
 type ToValue = func([]byte) any
@@ -18,34 +22,25 @@ func toString(b []byte) any { return string(b) }
 // Must not return the same State as input State.
 type MatchFunc = func(*State) (next *State, value any)
 
-// TerminalMeta is common interface to describe Terminal meta data
-type TerminalMeta interface {
-	// Name returns a human-recognizable name to not mess up with numeric Term
-	Name() string
-	// IsHidden returns whether the token is hidden
-	// TODO: docs
-	IsHidden() bool
-}
-
 // Terminal is base interface to parse specific type of token from input State
 type Terminal interface {
+	symbol.Meta
 	// Match is MatchFunc
 	Match(*State) (next *State, value any)
-	TerminalMeta
 }
 
 // NewFixed creates a Terminal to match the given sequence of bytes exactly.
 //
 // On match the returned value is matched bytes
-func NewFixed(b []byte) Terminal {
-	return &fixed{b: b}
+func NewFixed(id symbol.Id, b []byte) Terminal {
+	return &fixed{b: b, meta: meta{id: id}}
 }
 
 // NewFixedStr creates a Terminal to match the given substring exactly.
 //
 // On match the returned value is matched substring
-func NewFixedStr(s string) Terminal {
-	return &fixed{b: []byte(s), v: toString}
+func NewFixedStr(id symbol.Id, s string) Terminal {
+	return &fixed{b: []byte(s), v: toString, meta: meta{id: id}}
 }
 
 type fixed struct {
@@ -78,8 +73,8 @@ func (f *fixed) copy() Terminal {
 }
 
 // NewFunc wraps a MatchFunc to Terminal
-func NewFunc(fn MatchFunc) Terminal {
-	return &callback{fn: fn}
+func NewFunc(id symbol.Id, fn MatchFunc) Terminal {
+	return &callback{fn: fn, meta: meta{id: id}}
 }
 
 type callback struct {
@@ -129,10 +124,12 @@ type terminalCustomizer interface {
 }
 
 type meta struct {
+	id   symbol.Id
 	name string
 	hide bool
 }
 
+func (m *meta) Id() symbol.Id  { return m.id }
 func (m *meta) Name() string   { return m.name }
 func (m *meta) IsHidden() bool { return m.hide }
 
