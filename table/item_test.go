@@ -15,8 +15,8 @@ func TestItem_IsEqual(t *testing.T) {
 		nSum
 	)
 
-	rule1orig := grammar.NewRuleId(nSum, []symbol.Id{tInt, tPlus, tInt})
-	rule1copy := grammar.NewRuleId(nSum, []symbol.Id{tInt, tPlus, tInt})
+	rule1orig := grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt})
+	rule1copy := grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt})
 
 	s1 := newItem(rule1orig)
 
@@ -43,7 +43,7 @@ func TestItem_Navigate(t *testing.T) {
 		nSum
 		nValue
 	)
-	r := grammar.NewRuleId(nSum, []symbol.Id{nValue, tPlus, tInt})
+	r := grammar.NewRule(nSum, []symbol.Id{nValue, tPlus, tInt})
 	i0 := newItem(r)
 	if i0.Expected() != nValue {
 		t.Error("i0 expect() wrong: ", i0.Expected())

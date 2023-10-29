@@ -20,12 +20,12 @@ const (
 )
 
 var (
-	testRuleGoal     = grammar.NewRule(symbol.WithEOF(symbol.NewRule(nGoal)), []symbol.Id{nSum})
-	testRuleSumPlus  = grammar.NewRuleId(nSum, []symbol.Id{nSum, tPlus, nVal})
-	testRuleSumMinus = grammar.NewRuleId(nSum, []symbol.Id{nSum, tMinus, nVal})
-	testRuleSumVal   = grammar.NewRuleId(nSum, []symbol.Id{nVal})
-	testRuleValZero  = grammar.NewRuleId(nVal, []symbol.Id{tZero})
-	testRuleValOne   = grammar.NewRuleId(nVal, []symbol.Id{tOne})
+	testRuleGoal     = grammar.NewRuleMain(nGoal, []symbol.Id{nSum})
+	testRuleSumPlus  = grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal})
+	testRuleSumMinus = grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal})
+	testRuleSumVal   = grammar.NewRule(nSum, []symbol.Id{nVal})
+	testRuleValZero  = grammar.NewRule(nVal, []symbol.Id{tZero})
+	testRuleValOne   = grammar.NewRule(nVal, []symbol.Id{tOne})
 )
 var testGrammar = grammar.New(
 	[]lexer.Terminal{
@@ -98,10 +98,10 @@ func TestItemset_HasFinalItem(t *testing.T) {
 }
 
 func TestItemset_IsEqual(t *testing.T) {
-	r1 := grammar.NewRuleId(nSum, []symbol.Id{nSum, tPlus, nVal})
-	r2 := grammar.NewRuleId(nSum, []symbol.Id{nSum, tMinus, nVal})
-	r3 := grammar.NewRuleId(nSum, []symbol.Id{nVal})
-	r4 := grammar.NewRuleId(nVal, []symbol.Id{tZero})
+	r1 := grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal})
+	r2 := grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal})
+	r3 := grammar.NewRule(nSum, []symbol.Id{nVal})
+	r4 := grammar.NewRule(nVal, []symbol.Id{tZero})
 
 	s0 := itemset{items: []item{
 		newItem(r1),

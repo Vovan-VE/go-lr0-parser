@@ -11,18 +11,27 @@ type Rule interface {
 	Definition() []symbol.Id
 }
 
-// NewRule creates Rule from symbol.Rule
-func NewRule(r symbol.Rule, definition []symbol.Id) Rule {
+// NewRule creates Rule without Tag and EOF flag
+func NewRule(subject symbol.Id, definition []symbol.Id) Rule {
 	return &rule{
-		Rule:       r,
+		Rule:       symbol.NewRule(subject),
 		definition: definition,
 	}
 }
 
-// NewRuleId creates Rule without Tag and EOF flag
-func NewRuleId(subject symbol.Id, definition []symbol.Id) Rule {
+// NewRuleTag creates Rule with Tag, but without EOF flag
+func NewRuleTag(subject symbol.Id, tag symbol.Tag, definition []symbol.Id) Rule {
 	return &rule{
-		Rule:       symbol.NewRule(subject),
+		Rule:       symbol.NewRuleTag(subject, tag),
+		definition: definition,
+	}
+}
+
+// NewRuleMain creates Rule with EOF flag, but without Tag. Since a grammar must
+// have exactly one main rule, a Tag is useless in main rule
+func NewRuleMain(subject symbol.Id, definition []symbol.Id) Rule {
+	return &rule{
+		Rule:       symbol.WithEOF(symbol.NewRule(subject)),
 		definition: definition,
 	}
 }

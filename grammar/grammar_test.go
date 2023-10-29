@@ -37,10 +37,10 @@ func TestNew(t *testing.T) {
 		})
 
 		New(terminals, []Rule{
-			NewRuleId(nValue, []symbol.Id{tInt}),
-			NewRule(symbol.WithEOF(symbol.NewRule(nSum)), []symbol.Id{nValue}),
-			NewRule(symbol.WithEOF(symbol.NewRule(nSum)), []symbol.Id{nSum, tPlus, nValue}),
-			NewRule(symbol.WithEOF(symbol.NewRule(nSum)), []symbol.Id{nSum, tMinus, nValue}),
+			NewRule(nValue, []symbol.Id{tInt}),
+			NewRuleMain(nSum, []symbol.Id{nValue}),
+			NewRuleMain(nSum, []symbol.Id{nSum, tPlus, nValue}),
+			NewRuleMain(nSum, []symbol.Id{nSum, tMinus, nValue}),
 		})
 	})
 
@@ -52,10 +52,10 @@ func TestNew(t *testing.T) {
 		})
 
 		New(terminals, []Rule{
-			NewRuleId(nValue, []symbol.Id{tInt}),
-			NewRuleId(tPlus, []symbol.Id{nValue}),
-			NewRuleId(nSum, []symbol.Id{nSum, tPlus, nValue}),
-			NewRuleId(nSum, []symbol.Id{nSum, tMinus, nValue}),
+			NewRule(nValue, []symbol.Id{tInt}),
+			NewRule(tPlus, []symbol.Id{nValue}),
+			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}),
+			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}),
 		})
 	})
 
@@ -72,9 +72,9 @@ func TestNew(t *testing.T) {
 		})
 
 		New(terminals, []Rule{
-			NewRuleId(nSum, []symbol.Id{nValue}),
-			NewRuleId(nSum, []symbol.Id{nSum, tPlus, nValue}),
-			NewRuleId(nSum, []symbol.Id{nSum, tMinus, nValue}),
+			NewRule(nSum, []symbol.Id{nValue}),
+			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}),
+			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}),
 		})
 	})
 
@@ -92,11 +92,11 @@ func TestNew(t *testing.T) {
 		})
 
 		New(terminals, []Rule{
-			NewRuleId(nValue, []symbol.Id{tInt}),
-			NewRule(symbol.NewRuleTag(nSum, tagSumValue), []symbol.Id{nValue}),
-			NewRule(symbol.NewRuleTag(nSum, tagSumPlus), []symbol.Id{nSum, tPlus, nValue}),
-			NewRule(symbol.NewRuleTag(nSum, tagSumMinus), []symbol.Id{nSum, tMinus, nValue}),
-			NewRuleId(nGoal, []symbol.Id{nSum}),
+			NewRule(nValue, []symbol.Id{tInt}),
+			NewRuleTag(nSum, tagSumValue, []symbol.Id{nValue}),
+			NewRuleTag(nSum, tagSumPlus, []symbol.Id{nSum, tPlus, nValue}),
+			NewRuleTag(nSum, tagSumMinus, []symbol.Id{nSum, tMinus, nValue}),
+			NewRule(nGoal, []symbol.Id{nSum}),
 		})
 	})
 
@@ -120,20 +120,20 @@ func TestNew(t *testing.T) {
 		)
 
 		New(terminals2, []Rule{
-			NewRuleId(nValue, []symbol.Id{tInt}),
-			NewRule(symbol.NewRuleTag(nSum, tagSumValue), []symbol.Id{nValue}),
-			NewRule(symbol.NewRuleTag(nSum, tagSumPlus), []symbol.Id{nSum, tPlus, nValue}),
-			NewRule(symbol.NewRuleTag(nSum, tagSumMinus), []symbol.Id{nSum, tMinus, nValue}),
-			NewRule(symbol.WithEOF(symbol.NewRule(nGoal)), []symbol.Id{nSum}),
+			NewRule(nValue, []symbol.Id{tInt}),
+			NewRuleTag(nSum, tagSumValue, []symbol.Id{nValue}),
+			NewRuleTag(nSum, tagSumPlus, []symbol.Id{nSum, tPlus, nValue}),
+			NewRuleTag(nSum, tagSumMinus, []symbol.Id{nSum, tMinus, nValue}),
+			NewRuleMain(nGoal, []symbol.Id{nSum}),
 		})
 	})
 
 	g := New(terminals, []Rule{
-		NewRuleId(nValue, []symbol.Id{tInt}),
-		NewRule(symbol.NewRuleTag(nSum, tagSumValue), []symbol.Id{nValue}),
-		NewRule(symbol.NewRuleTag(nSum, tagSumPlus), []symbol.Id{nSum, tPlus, nValue}),
-		NewRule(symbol.NewRuleTag(nSum, tagSumMinus), []symbol.Id{nSum, tMinus, nValue}),
-		NewRule(symbol.WithEOF(symbol.NewRule(nGoal)), []symbol.Id{nSum}),
+		NewRule(nValue, []symbol.Id{tInt}),
+		NewRuleTag(nSum, tagSumValue, []symbol.Id{nValue}),
+		NewRuleTag(nSum, tagSumPlus, []symbol.Id{nSum, tPlus, nValue}),
+		NewRuleTag(nSum, tagSumMinus, []symbol.Id{nSum, tMinus, nValue}),
+		NewRuleMain(nGoal, []symbol.Id{nSum}),
 	})
 
 	t.Run("main rule", func(t *testing.T) {
