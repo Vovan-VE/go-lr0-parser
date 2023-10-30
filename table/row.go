@@ -1,8 +1,11 @@
 package table
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/grammar"
+	"github.com/vovan-ve/go-lr0-parser/internal/helpers"
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
@@ -32,6 +35,14 @@ func newRow() *row {
 }
 
 type stateActions map[symbol.Id]StateIndex
+
+func (s stateActions) dump(indent string) string {
+	res := ""
+	for _, p := range helpers.MapSortedInt(s) {
+		res += indent + fmt.Sprintf("#%v -> %v\n", p.K, p.V)
+	}
+	return res
+}
 
 type row struct {
 	acceptEof bool
@@ -88,4 +99,42 @@ func (r *row) IsReduceOnly() bool {
 		len(r.terminals) == 0 &&
 		len(r.gotos) == 0 &&
 		r.reduceRule != nil
+}
+
+func (r *row) dump(indent string) string {
+	res := indent + "EOF: "
+	if r.acceptEof {
+		res += "-"
+	} else {
+		res += "ACCEPT"
+	}
+
+	res += "\n" + indent + "terminals:"
+	if len(r.terminals) != 0 {
+		res += "\n" + r.terminals.dump(indent+"\t")
+	} else {
+		res += " -\n"
+	}
+
+	res += indent + "goto:"
+	if len(r.gotos) != 0 {
+		res += "\n" + r.gotos.dump(indent+"\t")
+	} else {
+		res += " -\n"
+	}
+
+	res += indent + "rule:"
+	if r.reduceRule != nil {
+		res += "\n" + indent + fmt.Sprintf("\t#%v :", r.reduceRule.Subject())
+		for _, id := range r.reduceRule.Definition() {
+			res += fmt.Sprintf(" #%v", id)
+		}
+		if r.reduceRule.HasEOF() {
+			res += " $"
+		}
+		res += "\n"
+	} else {
+		res += " -\n"
+	}
+	return res
 }

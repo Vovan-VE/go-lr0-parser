@@ -1,7 +1,10 @@
 package table
 
 import (
+	"fmt"
+
 	"github.com/vovan-ve/go-lr0-parser/grammar"
+	"github.com/vovan-ve/go-lr0-parser/internal/helpers"
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
@@ -29,9 +32,13 @@ func New(g grammar.Grammar) Table {
 	}
 	for len(addStates) != 0 {
 		nextStates := newAddStatesMap()
-		for fromSI, fromSets := range addStates {
+		// maps are sorted only for stable iterations order - it's better for
+		// debug purpose, so table is stable for same input grammar
+		for _, fromSets := range helpers.MapSortedInt(addStates) {
+			fromSI := fromSets.K
 		NewSets:
-			for fromId, fromState := range fromSets {
+			for _, from := range helpers.MapSortedInt(fromSets.V) {
+				fromId, fromState := from.K, from.V
 				var fromIsT, fromIsNT bool
 				if fromId != symbol.InvalidId {
 					fromIsT = g.IsTerminal(fromId)
@@ -90,3 +97,13 @@ type table struct {
 //func (t *table) RowsCount() int { return len(t.rows) }
 
 func (t *table) Row(idx StateIndex) Row { return t.rows[idx] }
+
+func (t *table) dump() string {
+	res := "====[ table ]====\n"
+	for i, r := range t.rows {
+		res += fmt.Sprintf("row %v ---------\n", i)
+		res += r.dump("\t")
+	}
+	res += "=================\n"
+	return res
+}

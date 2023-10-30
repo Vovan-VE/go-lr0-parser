@@ -195,4 +195,75 @@ func TestNew(t *testing.T) {
 	if rowSumMinusVal.ReduceRule() != testRuleImplSumMinus {
 		t.Error("rowSumMinusVal reduce rule wrong")
 	}
+
+	if d := tbl.dump(); d != expectTableDump {
+		t.Error("table dump is:\n", d)
+	}
 }
+
+const expectTableDump = `====[ table ]====
+row 0 ---------
+	EOF: ACCEPT
+	terminals:
+		#1 -> 1
+		#2 -> 2
+	goto:
+		#5 -> 3
+		#6 -> 4
+	rule: -
+row 1 ---------
+	EOF: ACCEPT
+	terminals: -
+	goto: -
+	rule:
+		#5 : #1
+row 2 ---------
+	EOF: ACCEPT
+	terminals: -
+	goto: -
+	rule:
+		#5 : #2
+row 3 ---------
+	EOF: ACCEPT
+	terminals: -
+	goto: -
+	rule:
+		#6 : #5
+row 4 ---------
+	EOF: -
+	terminals:
+		#3 -> 5
+		#4 -> 6
+	goto: -
+	rule:
+		#7 : #6 $
+row 5 ---------
+	EOF: ACCEPT
+	terminals:
+		#1 -> 1
+		#2 -> 2
+	goto:
+		#5 -> 7
+	rule: -
+row 6 ---------
+	EOF: ACCEPT
+	terminals:
+		#1 -> 1
+		#2 -> 2
+	goto:
+		#5 -> 8
+	rule: -
+row 7 ---------
+	EOF: ACCEPT
+	terminals: -
+	goto: -
+	rule:
+		#6 : #6 #3 #5
+row 8 ---------
+	EOF: ACCEPT
+	terminals: -
+	goto: -
+	rule:
+		#6 : #6 #4 #5
+=================
+`
