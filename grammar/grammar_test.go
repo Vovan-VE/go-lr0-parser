@@ -1,6 +1,7 @@
 package grammar
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/vovan-ve/go-lr0-parser/internal/testutils"
@@ -24,8 +25,8 @@ func TestNew(t *testing.T) {
 	var (
 		terminals = []lexer.Terminal{
 			lexer.NewFunc(tInt, matchDigits),
-			lexer.NewFixedStr(tPlus, "+"),
-			lexer.NewFixedStr(tMinus, "-"),
+			lexer.Hide(lexer.NewFixedStr(tPlus, "+")),
+			lexer.Hide(lexer.NewFixedStr(tMinus, "-")),
 		}
 	)
 
@@ -36,11 +37,11 @@ func TestNew(t *testing.T) {
 			}
 		})
 
-		New(terminals, []Rule{
-			NewRule(nValue, []symbol.Id{tInt}),
-			NewRuleMain(nSum, []symbol.Id{nValue}),
-			NewRuleMain(nSum, []symbol.Id{nSum, tPlus, nValue}),
-			NewRuleMain(nSum, []symbol.Id{nSum, tMinus, nValue}),
+		New(terminals, []RuleDefinition{
+			NewRule(nValue, []symbol.Id{tInt}, nil),
+			NewRuleMain(nSum, []symbol.Id{nValue}, nil),
+			NewRuleMain(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
+			NewRuleMain(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
 		})
 	})
 
@@ -51,11 +52,11 @@ func TestNew(t *testing.T) {
 			}
 		})
 
-		New(terminals, []Rule{
-			NewRule(nValue, []symbol.Id{tInt}),
-			NewRule(tPlus, []symbol.Id{nValue}),
-			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}),
-			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}),
+		New(terminals, []RuleDefinition{
+			NewRule(nValue, []symbol.Id{tInt}, nil),
+			NewRule(tPlus, []symbol.Id{nValue}, nil),
+			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
+			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
 		})
 	})
 
@@ -71,18 +72,12 @@ func TestNew(t *testing.T) {
 			}
 		})
 
-		New(terminals, []Rule{
-			NewRule(nSum, []symbol.Id{nValue}),
-			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}),
-			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}),
+		New(terminals, []RuleDefinition{
+			NewRule(nSum, []symbol.Id{nValue}, nil),
+			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
+			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
 		})
 	})
-
-	const (
-		tagSumValue symbol.Tag = iota + 1
-		tagSumPlus
-		tagSumMinus
-	)
 
 	t.Run("panic: no main rule", func(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
@@ -91,12 +86,12 @@ func TestNew(t *testing.T) {
 			}
 		})
 
-		New(terminals, []Rule{
-			NewRule(nValue, []symbol.Id{tInt}),
-			NewRuleTag(nSum, tagSumValue, []symbol.Id{nValue}),
-			NewRuleTag(nSum, tagSumPlus, []symbol.Id{nSum, tPlus, nValue}),
-			NewRuleTag(nSum, tagSumMinus, []symbol.Id{nSum, tMinus, nValue}),
-			NewRule(nGoal, []symbol.Id{nSum}),
+		New(terminals, []RuleDefinition{
+			NewRule(nValue, []symbol.Id{tInt}, nil),
+			NewRule(nSum, []symbol.Id{nValue}, nil),
+			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
+			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
+			NewRule(nGoal, []symbol.Id{nSum}, nil),
 		})
 	})
 
@@ -119,21 +114,21 @@ func TestNew(t *testing.T) {
 			lexer.Name("MUL", lexer.NewFixedStr(tMul, "*")),
 		)
 
-		New(terminals2, []Rule{
-			NewRule(nValue, []symbol.Id{tInt}),
-			NewRuleTag(nSum, tagSumValue, []symbol.Id{nValue}),
-			NewRuleTag(nSum, tagSumPlus, []symbol.Id{nSum, tPlus, nValue}),
-			NewRuleTag(nSum, tagSumMinus, []symbol.Id{nSum, tMinus, nValue}),
-			NewRuleMain(nGoal, []symbol.Id{nSum}),
+		New(terminals2, []RuleDefinition{
+			NewRule(nValue, []symbol.Id{tInt}, nil),
+			NewRule(nSum, []symbol.Id{nValue}, nil),
+			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
+			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
+			NewRuleMain(nGoal, []symbol.Id{nSum}, nil),
 		})
 	})
 
-	g := New(terminals, []Rule{
-		NewRule(nValue, []symbol.Id{tInt}),
-		NewRuleTag(nSum, tagSumValue, []symbol.Id{nValue}),
-		NewRuleTag(nSum, tagSumPlus, []symbol.Id{nSum, tPlus, nValue}),
-		NewRuleTag(nSum, tagSumMinus, []symbol.Id{nSum, tMinus, nValue}),
-		NewRuleMain(nGoal, []symbol.Id{nSum}),
+	g := New(terminals, []RuleDefinition{
+		NewRule(nValue, []symbol.Id{tInt}, nil),
+		NewRule(nSum, []symbol.Id{nValue}, nil),
+		NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
+		NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
+		NewRuleMain(nGoal, []symbol.Id{nSum}, nil),
 	})
 
 	t.Run("main rule", func(t *testing.T) {
@@ -141,7 +136,7 @@ func TestNew(t *testing.T) {
 		if mr == nil {
 			t.Fatal("no main rule")
 		}
-		if mr.Subject() != nGoal || mr.Tag() != 0 || !mr.HasEOF() {
+		if mr.Subject() != nGoal || !mr.HasEOF() {
 			t.Errorf("incorrect main rule: %#v", mr)
 		}
 		if mrd := mr.Definition(); len(mrd) != 1 || mrd[0] != nSum {
@@ -155,7 +150,7 @@ func TestNew(t *testing.T) {
 		}
 
 		rs := g.RulesFor(nSum)
-		if len(rs) != 3 || rs[0].Tag() != tagSumValue || rs[1].Tag() != tagSumPlus || rs[2].Tag() != tagSumMinus {
+		if len(rs) != 3 {
 			t.Fatalf("incorrect rules for nSum: %#v", rs)
 		}
 
@@ -194,8 +189,14 @@ func matchDigits(state *lexer.State) (next *lexer.State, value any) {
 		return
 	}
 	next = st
-	value = string(state.BytesTo(next))
+	value, err := strconv.ParseInt(string(state.BytesTo(next)), 10, 63)
+	if err != nil {
+		value = err
+	}
 	return
 }
 
 func isDigit(b byte) bool { return b >= '0' && b <= '9' }
+
+func calcSum(a, b int64) int64      { return a + b }
+func calcSubtract(a, b int64) int64 { return a - b }

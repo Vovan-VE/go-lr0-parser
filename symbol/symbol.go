@@ -18,10 +18,6 @@ type Id int
 
 const InvalidId Id = 0
 
-// Tag is optional for extra identity when one non-Terminal has multiple
-// alternative Rules
-type Tag byte
-
 // Meta is common interface to describe Symbol meta data
 type Meta interface {
 	Id() Id

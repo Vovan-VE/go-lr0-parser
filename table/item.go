@@ -12,8 +12,8 @@ import (
 //		Sum : Sum "+" Product
 //	output item:
 //		Sum : > Sum "+" Product
-func newItem(r grammar.Rule) item {
-	return item{Rule: r}
+func newItem(r grammar.RuleImplementation) item {
+	return item{RuleImplementation: r}
 }
 
 // Item of parser state items set
@@ -30,7 +30,7 @@ func newItem(r grammar.Rule) item {
 //		Sum :   Sum   "+" > Product
 //		Sum :   Sum   "+"   Product >
 type item struct {
-	grammar.Rule
+	grammar.RuleImplementation
 	nextIndex int
 }
 

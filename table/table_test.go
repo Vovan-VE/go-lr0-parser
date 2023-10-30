@@ -56,7 +56,7 @@ func TestNew(t *testing.T) {
 	if !rowValZero.IsReduceOnly() {
 		t.Errorf("rowValZero not reduce only: %#v", rowValZero)
 	}
-	if rowValZero.ReduceRule() != testRuleValZero {
+	if rowValZero.ReduceRule() != testRuleImplValZero {
 		t.Error("rowValZero reduce rule wrong")
 	}
 
@@ -66,7 +66,7 @@ func TestNew(t *testing.T) {
 	if !rowValOne.IsReduceOnly() {
 		t.Errorf("rowValOne not reduce only: %#v", rowValOne)
 	}
-	if rowValOne.ReduceRule() != testRuleValOne {
+	if rowValOne.ReduceRule() != testRuleImplValOne {
 		t.Error("rowValOne reduce rule wrong")
 	}
 
@@ -76,7 +76,7 @@ func TestNew(t *testing.T) {
 	if !rowSumVal.IsReduceOnly() {
 		t.Errorf("rowValOne not reduce only: %#v", rowSumVal)
 	}
-	if rowSumVal.ReduceRule() != testRuleSumVal {
+	if rowSumVal.ReduceRule() != testRuleImplSumVal {
 		t.Error("rowValOne reduce rule wrong")
 	}
 
@@ -86,7 +86,7 @@ func TestNew(t *testing.T) {
 	if !rowGoal.AcceptEof() {
 		t.Error("rowGoal not eof")
 	}
-	if rowGoal.ReduceRule() != testRuleGoal {
+	if rowGoal.ReduceRule() != testRuleImplGoal {
 		t.Error("rowGoal reduce rule wrong")
 	}
 
@@ -182,7 +182,7 @@ func TestNew(t *testing.T) {
 	if !rowSumPlusVal.IsReduceOnly() {
 		t.Errorf("rowSumPlusVal not reduce only: %#v", rowSumPlusVal)
 	}
-	if rowSumPlusVal.ReduceRule() != testRuleSumPlus {
+	if rowSumPlusVal.ReduceRule() != testRuleImplSumPlus {
 		t.Error("rowSumPlusVal reduce rule wrong")
 	}
 
@@ -192,7 +192,7 @@ func TestNew(t *testing.T) {
 	if !rowSumMinusVal.IsReduceOnly() {
 		t.Errorf("rowSumMinusVal not reduce only: %#v", rowSumMinusVal)
 	}
-	if rowSumMinusVal.ReduceRule() != testRuleSumMinus {
+	if rowSumMinusVal.ReduceRule() != testRuleImplSumMinus {
 		t.Error("rowSumMinusVal reduce rule wrong")
 	}
 }

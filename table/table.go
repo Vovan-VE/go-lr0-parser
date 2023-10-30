@@ -7,10 +7,16 @@ import (
 
 type StateIndex = int
 
+// Table is states table controlling how parses state will behave
+//
+// https://en.wikipedia.org/wiki/LR_parser#Table_construction
 type Table interface {
+	//RowsCount() int
+
 	Row(idx StateIndex) Row
 }
 
+// New creates new Table from the given Grammar
 func New(g grammar.Grammar) Table {
 	var (
 		rows   []*row
@@ -80,5 +86,7 @@ func newAddStatesMap() map[StateIndex]map[symbol.Id]itemset {
 type table struct {
 	rows []*row
 }
+
+//func (t *table) RowsCount() int { return len(t.rows) }
 
 func (t *table) Row(idx StateIndex) Row { return t.rows[idx] }

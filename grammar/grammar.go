@@ -11,10 +11,11 @@ import (
 // Grammar defines full grammar how to parse an input stream
 type Grammar interface {
 	lexer.Lexer
+	RuleImpl(index int) RuleImplementation
 	// MainRule returns main rule, the one with EOF flag
-	MainRule() Rule
+	MainRule() RuleImplementation
 	// RulesFor returns set of rules for the given subject
-	RulesFor(id symbol.Id) []Rule
+	RulesFor(id symbol.Id) []RuleImplementation
 }
 
 // New creates new Grammar
@@ -28,9 +29,10 @@ type Grammar interface {
 // in Rules Subject
 //
 // - Exactly one Rule must have EOF flag - this is Main Rule
-func New(terminals []lexer.Terminal, rules []Rule) Grammar {
+func New(terminals []lexer.Terminal, rules []RuleDefinition) Grammar {
 	var (
 		l           = lexer.New(terminals...)
+		rulesImpl   = make([]RuleImplementation, 0, len(rules))
 		mainI       = -1
 		si          = make(map[symbol.Id][]int)
 		furtherNTAt = make(map[symbol.Id]string)
@@ -74,6 +76,8 @@ func New(terminals []lexer.Terminal, rules []Rule) Grammar {
 			// TODO: Rule to string
 			furtherNTAt[id] = fmt.Sprintf("#%d in rules[%d] definitions[%d]", id, ri, i)
 		}
+
+		rulesImpl = append(rulesImpl, ToImplementation(r, l))
 	}
 
 	if len(furtherNTAt) != 0 {
@@ -99,7 +103,7 @@ func New(terminals []lexer.Terminal, rules []Rule) Grammar {
 
 	return &grammar{
 		Lexer:           l,
-		rules:           rules,
+		rules:           rulesImpl,
 		mainIndex:       mainI,
 		subjectsIndices: si,
 	}
@@ -107,16 +111,18 @@ func New(terminals []lexer.Terminal, rules []Rule) Grammar {
 
 type grammar struct {
 	lexer.Lexer
-	rules           []Rule
+	rules           []RuleImplementation
 	mainIndex       int
 	subjectsIndices map[symbol.Id][]int
 }
 
-func (g *grammar) MainRule() Rule {
+func (g *grammar) RuleImpl(index int) RuleImplementation { return g.rules[index] }
+
+func (g *grammar) MainRule() RuleImplementation {
 	return g.rules[g.mainIndex]
 }
 
-func (g *grammar) RulesFor(id symbol.Id) []Rule {
+func (g *grammar) RulesFor(id symbol.Id) []RuleImplementation {
 	indices, ok := g.subjectsIndices[id]
 	if !ok {
 		if g.IsTerminal(id) {
@@ -124,7 +130,7 @@ func (g *grammar) RulesFor(id symbol.Id) []Rule {
 		}
 		panic(errors.Wrapf(symbol.ErrDefine, "no rule for #%d", id))
 	}
-	ret := make([]Rule, 0, len(indices))
+	ret := make([]RuleImplementation, 0, len(indices))
 	for _, idx := range indices {
 		ret = append(ret, g.rules[idx])
 	}

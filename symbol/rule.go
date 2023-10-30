@@ -8,8 +8,6 @@ import (
 type Rule interface {
 	// Subject of the rule
 	Subject() Id
-	// Tag to distinguish alternative Subject definitions
-	Tag() Tag
 	// HasEOF tells whether EOF must be found in the end of input
 	HasEOF() bool
 }
@@ -17,11 +15,6 @@ type Rule interface {
 // NewRule creates new Rule with only Subject Id
 func NewRule(subject Id) Rule {
 	return rule{subject: subject}
-}
-
-// NewRuleTag creates new Rule with Subject Id and Tag
-func NewRuleTag(subject Id, tag Tag) Rule {
-	return rule{subject: subject, tag: tag}
 }
 
 // WithEOF creates new copy of our local Rule implementation with HasEOF flag
@@ -46,10 +39,8 @@ func WithEOF(r Rule) Rule {
 
 type rule struct {
 	subject Id
-	tag     Tag
 	eof     bool
 }
 
 func (r rule) Subject() Id  { return r.subject }
-func (r rule) Tag() Tag     { return r.tag }
 func (r rule) HasEOF() bool { return r.eof }

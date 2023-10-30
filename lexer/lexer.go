@@ -5,8 +5,14 @@ import (
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
+type HiddenRegistry interface {
+	// IsHidden returns true if the given Id is a hidden symbol
+	IsHidden(id symbol.Id) bool
+}
+
 // Lexer does search predefined Terminals in an input stream.
 type Lexer interface {
+	HiddenRegistry
 	// IsTerminal returns true if the given Id is one of defined Terminal
 	IsTerminal(id symbol.Id) bool
 	// GetTerminalIdsSet returns new set of all defined Id
@@ -57,6 +63,11 @@ func (l *lexer) IsTerminal(id symbol.Id) bool {
 	return ok
 }
 
+func (l *lexer) IsHidden(id symbol.Id) bool {
+	t, ok := l.terminals[id]
+	return ok && t.IsHidden()
+}
+
 func (l *lexer) GetTerminalIdsSet() symbol.SetOfId {
 	m := symbol.NewSetOfId()
 	for id := range l.terminals {
@@ -72,6 +83,8 @@ func (l *lexer) Match(state *State, expected []symbol.Id) (next *State, m *Match
 			value any
 			ok    bool
 		)
+		// FIXME: Order may be important, so enhance to return the longest match.
+		//   Maybe Terminal can optionally have MatchLength() to return cont length if available.
 		for _, expect := range expected {
 			t = l.terminals[expect]
 			next, value = t.Match(state)

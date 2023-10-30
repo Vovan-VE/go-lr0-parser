@@ -5,6 +5,7 @@ import (
 
 	"github.com/vovan-ve/go-lr0-parser/grammar"
 	"github.com/vovan-ve/go-lr0-parser/internal/testutils"
+	"github.com/vovan-ve/go-lr0-parser/lexer"
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
@@ -15,8 +16,8 @@ func TestItem_IsEqual(t *testing.T) {
 		nSum
 	)
 
-	rule1orig := grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt})
-	rule1copy := grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt})
+	rule1orig := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt}, calcStub3), stubHidden)
+	rule1copy := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt}, calcStub3), stubHidden)
 
 	s1 := newItem(rule1orig)
 
@@ -43,7 +44,7 @@ func TestItem_Navigate(t *testing.T) {
 		nSum
 		nValue
 	)
-	r := grammar.NewRule(nSum, []symbol.Id{nValue, tPlus, tInt})
+	r := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nValue, tPlus, tInt}, calcStub3), stubHidden)
 	i0 := newItem(r)
 	if i0.Expected() != nValue {
 		t.Error("i0 expect() wrong: ", i0.Expected())
@@ -85,3 +86,11 @@ func TestItem_Navigate(t *testing.T) {
 		i3.Shift()
 	})
 }
+
+func calcStub3(any, any, any) (any, error) { return nil, nil }
+
+var stubHidden lexer.HiddenRegistry = &_stubHidden{}
+
+type _stubHidden struct{}
+
+func (_ *_stubHidden) IsHidden(symbol.Id) bool { return false }

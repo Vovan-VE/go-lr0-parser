@@ -20,12 +20,12 @@ const (
 )
 
 var (
-	testRuleGoal     = grammar.NewRuleMain(nGoal, []symbol.Id{nSum})
-	testRuleSumPlus  = grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal})
-	testRuleSumMinus = grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal})
-	testRuleSumVal   = grammar.NewRule(nSum, []symbol.Id{nVal})
-	testRuleValZero  = grammar.NewRule(nVal, []symbol.Id{tZero})
-	testRuleValOne   = grammar.NewRule(nVal, []symbol.Id{tOne})
+	testRuleGoal     = grammar.NewRuleMain(nGoal, []symbol.Id{nSum}, nil)
+	testRuleSumPlus  = grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal}, calcStub3)
+	testRuleSumMinus = grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal}, calcStub3)
+	testRuleSumVal   = grammar.NewRule(nSum, []symbol.Id{nVal}, nil)
+	testRuleValZero  = grammar.NewRule(nVal, []symbol.Id{tZero}, nil)
+	testRuleValOne   = grammar.NewRule(nVal, []symbol.Id{tOne}, nil)
 )
 var testGrammar = grammar.New(
 	[]lexer.Terminal{
@@ -34,7 +34,7 @@ var testGrammar = grammar.New(
 		lexer.NewFixedStr(tPlus, "+"),
 		lexer.NewFixedStr(tMinus, "-"),
 	},
-	[]grammar.Rule{
+	[]grammar.RuleDefinition{
 		testRuleGoal,
 		testRuleSumPlus,
 		testRuleSumMinus,
@@ -42,6 +42,14 @@ var testGrammar = grammar.New(
 		testRuleValZero,
 		testRuleValOne,
 	},
+)
+var (
+	testRuleImplGoal     = testGrammar.RuleImpl(0)
+	testRuleImplSumPlus  = testGrammar.RuleImpl(1)
+	testRuleImplSumMinus = testGrammar.RuleImpl(2)
+	testRuleImplSumVal   = testGrammar.RuleImpl(3)
+	testRuleImplValZero  = testGrammar.RuleImpl(4)
+	testRuleImplValOne   = testGrammar.RuleImpl(5)
 )
 
 func TestGetAllPossibleItems(t *testing.T) {
@@ -98,10 +106,10 @@ func TestItemset_HasFinalItem(t *testing.T) {
 }
 
 func TestItemset_IsEqual(t *testing.T) {
-	r1 := grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal})
-	r2 := grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal})
-	r3 := grammar.NewRule(nSum, []symbol.Id{nVal})
-	r4 := grammar.NewRule(nVal, []symbol.Id{tZero})
+	r1 := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal}, calcStub3), stubHidden)
+	r2 := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal}, calcStub3), stubHidden)
+	r3 := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nVal}, nil), stubHidden)
+	r4 := grammar.ToImplementation(grammar.NewRule(nVal, []symbol.Id{tZero}, nil), stubHidden)
 
 	s0 := itemset{items: []item{
 		newItem(r1),
@@ -151,7 +159,7 @@ func TestItemset_GetNextItemsets(t *testing.T) {
 	}
 	if !set1zero.IsEqual(
 		itemset{[]item{
-			newItem(testRuleValZero).Shift(),
+			newItem(testRuleImplValZero).Shift(),
 		}},
 	) {
 		t.Error("set1zero wrong")
@@ -166,7 +174,7 @@ func TestItemset_GetNextItemsets(t *testing.T) {
 	}
 	if !set1one.IsEqual(
 		itemset{[]item{
-			newItem(testRuleValOne).Shift(),
+			newItem(testRuleImplValOne).Shift(),
 		}},
 	) {
 		t.Error("set1one wrong")
@@ -181,7 +189,7 @@ func TestItemset_GetNextItemsets(t *testing.T) {
 	}
 	if !set1val.IsEqual(
 		itemset{[]item{
-			newItem(testRuleSumVal).Shift(),
+			newItem(testRuleImplSumVal).Shift(),
 		}},
 	) {
 		t.Error("set1val wrong")
@@ -196,9 +204,9 @@ func TestItemset_GetNextItemsets(t *testing.T) {
 	}
 	if !set1sum.IsEqual(
 		itemset{[]item{
-			newItem(testRuleGoal).Shift(),
-			newItem(testRuleSumPlus).Shift(),
-			newItem(testRuleSumMinus).Shift(),
+			newItem(testRuleImplGoal).Shift(),
+			newItem(testRuleImplSumPlus).Shift(),
+			newItem(testRuleImplSumMinus).Shift(),
 		}},
 	) {
 		t.Error("set1sum wrong")
@@ -215,9 +223,9 @@ func TestItemset_GetNextItemsets(t *testing.T) {
 	}
 	if !set1sumPlus.IsEqual(
 		itemset{[]item{
-			newItem(testRuleSumPlus).Shift().Shift(),
-			newItem(testRuleValZero),
-			newItem(testRuleValOne),
+			newItem(testRuleImplSumPlus).Shift().Shift(),
+			newItem(testRuleImplValZero),
+			newItem(testRuleImplValOne),
 		}},
 	) {
 		t.Error("set1sumPlus wrong")
@@ -229,9 +237,9 @@ func TestItemset_GetNextItemsets(t *testing.T) {
 	}
 	if !set1sumMinus.IsEqual(
 		itemset{[]item{
-			newItem(testRuleSumMinus).Shift().Shift(),
-			newItem(testRuleValZero),
-			newItem(testRuleValOne),
+			newItem(testRuleImplSumMinus).Shift().Shift(),
+			newItem(testRuleImplValZero),
+			newItem(testRuleImplValOne),
 		}},
 	) {
 		t.Error("set1sumMinus wrong")
