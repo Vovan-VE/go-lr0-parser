@@ -56,7 +56,7 @@ func (i item) HasFurther() bool {
 //		Sum : Sum   "+" > Product
 func (i item) Shift() item {
 	if !i.HasFurther() {
-		panic(errors.New("internal bad usage"))
+		panic(errors.Wrap(symbol.ErrInternal, "bad usage"))
 	}
 	next := i
 	next.nextIndex++

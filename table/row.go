@@ -72,7 +72,7 @@ func (r *row) SetTerminalAction(id symbol.Id, idx StateIndex) {
 	// example is plus `+` and increment `++`
 	// a `+` can incorrectly match a part of increment `++` which is incorrect
 	if v, ok := r.terminals[id]; ok && v != idx {
-		panic(errors.New("already was set to different index"))
+		panic(errors.Wrap(symbol.ErrInternal, "already was set to different index"))
 	}
 	r.terminalsSet.Add(id)
 	r.terminals[id] = idx
@@ -85,7 +85,7 @@ func (r *row) GotoAction(id symbol.Id) (StateIndex, bool) {
 
 func (r *row) SetGoto(id symbol.Id, idx StateIndex) {
 	if v, ok := r.gotos[id]; ok && v != idx {
-		panic(errors.New("already was set to different index"))
+		panic(errors.Wrap(symbol.ErrInternal, "already was set to different index"))
 	}
 	r.gotos[id] = idx
 }

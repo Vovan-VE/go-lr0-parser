@@ -57,7 +57,7 @@ func (s *stack) Reduce() (bool, error) {
 	reduceCount := len(rule.Definition())
 	totalCount := len(s.items)
 	if totalCount < reduceCount {
-		panic(errors.New("internal: not enough items in stack"))
+		panic(errors.Wrap(symbol.ErrInternal, "not enough items in stack"))
 	}
 	nextCount := totalCount - reduceCount
 
@@ -65,7 +65,7 @@ func (s *stack) Reduce() (bool, error) {
 	def := rule.Definition()
 	for i, it := range s.items[nextCount:] {
 		if it.node != def[i] {
-			panic(errors.New("internal: unexpected stack content"))
+			panic(errors.Wrap(symbol.ErrInternal, "unexpected stack content"))
 		}
 		if !rule.IsHidden(i) {
 			values = append(values, it.value)
@@ -85,7 +85,7 @@ func (s *stack) Reduce() (bool, error) {
 	newId := rule.Subject()
 	newSI, ok := baseRow.GotoAction(newId)
 	if !ok {
-		panic(errors.New("internal: unexpected state in gotos"))
+		panic(errors.Wrap(symbol.ErrInternal, "unexpected state in gotos"))
 	}
 
 	s.items = s.items[:nextCount]
@@ -95,7 +95,7 @@ func (s *stack) Reduce() (bool, error) {
 
 func (s *stack) Done() any {
 	if len(s.items) != 1 {
-		panic(errors.New("internal: unexpected stack content"))
+		panic(errors.Wrap(symbol.ErrInternal, "unexpected stack content"))
 	}
 	v := s.items[0].value
 	s.items = nil

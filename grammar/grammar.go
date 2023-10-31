@@ -23,7 +23,7 @@ type Grammar interface {
 // Violation of the following statements will cause panic symbol.ErrDefine since
 // it is definition mistake.
 //
-// - Every Terminal must be used in Rules
+// - All Terminal must be used in Rules. No unused Terminals.
 //
 // - Every symbol.Id in every rule definition must exist either in Terminals or
 // in Rules Subject
