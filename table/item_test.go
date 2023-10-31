@@ -79,7 +79,7 @@ func TestItem_Navigate(t *testing.T) {
 
 	t.Run("shift in the end", func(t *testing.T) {
 		defer testutils.ExpectPanicError(t, nil, func(t *testing.T, err error) {
-			if err.Error() != "internal bad usage" {
+			if err.Error() != "bad usage: internal error" {
 				t.Error("another error", err)
 			}
 		})

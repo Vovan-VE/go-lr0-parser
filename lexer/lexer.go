@@ -19,11 +19,13 @@ type Lexer interface {
 	GetTerminalIdsSet() symbol.SetOfId
 	// Match tries to parse one of expected Terminals in the given State.
 	//
-	// Order in `expected` does matter. First matched Terminal will be returned in
-	// Match with next State for further parsing.
+	// Order in `expected` does not matter. Only definition order ot Terminals
+	// does matter.
 	//
-	// At EOF or when none of `expected` Terminals matched, a ErrParse wrapped error
-	// will be returned.
+	// If none of expected Terminals matched, it will try to match first of the
+	// rest unexpected Terminals.
+	//
+	// At EOF or when nothing matched, a ErrParse wrapped error will be returned.
 	Match(state *State, expected symbol.ReadonlySetOfId) (next *State, m *Match, err error)
 }
 
@@ -75,28 +77,36 @@ func (l *lexer) GetTerminalIdsSet() symbol.SetOfId {
 	return m
 }
 
-func (l *lexer) Match(state *State, expected symbol.ReadonlySetOfId) (next *State, m *Match, err error) {
+func (l *lexer) Match(state *State, expected symbol.ReadonlySetOfId) (*State, *Match, error) {
 	if !state.IsEOF() {
 		var (
-			value any
-			ok    bool
+			altNext *State
+			altM    *Match
 		)
 		for _, t := range l.list {
-			if expected.Has(t.Id()) {
-				next, value = t.Match(state)
-				if err, ok = value.(error); ok {
-					return
+			nextS, v := t.Match(state)
+			if v != nil {
+				if err, ok := v.(error); ok {
+					return nil, nil, err
 				}
-				if next != nil {
-					m = &Match{
-						Term:  t.Id(),
-						Value: value,
-					}
-					return
+			}
+			if nextS != nil {
+				m2 := &Match{
+					Term:  t.Id(),
+					Value: v,
+				}
+				if expected.Has(t.Id()) {
+					return nextS, m2, nil
+				} else if altNext == nil {
+					altNext = nextS
+					altM = m2
 				}
 			}
 		}
+
+		if altNext != nil {
+			return altNext, altM, nil
+		}
 	}
-	err = WithSource(expectationError(expected, l.list), state)
-	return
+	return nil, nil, WithSource(expectationError(expected, l.list), state)
 }

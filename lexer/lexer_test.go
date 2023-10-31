@@ -145,22 +145,15 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// no match
-	_, _, err = l.Match(e, symbol.NewSetOfId(tMinus, tInt))
-	if !errors.Is(err, ErrParse) {
-		t.Fatal("no expected: wrong error", err)
+	f3, m, err := l.Match(e, symbol.NewSetOfId(tMinus, tInt))
+	if err != nil {
+		t.Fatalf("f3: match failed: %+v", err)
 	}
-	const (
-		expectStr     = `expected Int or Minus: parse error near ⟪38+23-19⟫⏵⟪++⟫`
-		expectStrPlus = `expected Int or Minus: parse error near:
-38+23-19++
---------^
-`
-	)
-	if fmt.Sprintf("%v", err) != expectStr {
-		t.Errorf("err: <<<<%s>>>>", err)
+	if v, ok := m.Value.(string); m.Term != tInc || !ok || v != "++" {
+		t.Fatalf("f3: match wrong: %+v", m)
 	}
-	if fmt.Sprintf("%+v", err) != expectStrPlus {
-		t.Errorf("err+ wrong: <<<<%+v>>>>", err)
+	if f3.Offset() != 10 {
+		t.Fatal("f3: offset", f3.Offset())
 	}
 
 	// EOF
