@@ -24,38 +24,37 @@ type Lexer interface {
 	//
 	// At EOF or when none of `expected` Terminals matched, a ErrParse wrapped error
 	// will be returned.
-	Match(state *State, expected []symbol.Id) (next *State, m *Match, err error)
+	Match(state *State, expected symbol.ReadonlySetOfId) (next *State, m *Match, err error)
 }
 
 type termMap = map[symbol.Id]Terminal
 
 type lexer struct {
+	list      []Terminal
 	terminals termMap
 }
 
 // New creates a new empty Configurable
 func New(t ...Terminal) Lexer {
 	l := &lexer{
+		list:      make([]Terminal, 0, len(t)),
 		terminals: make(termMap),
 	}
 	for _, ti := range t {
-		l.add(ti)
+		id := ti.Id()
+		if id == symbol.InvalidId {
+			panic(errors.Wrap(symbol.ErrDefine, "zero id"))
+		}
+		if prev, exists := l.terminals[id]; exists {
+			if prev == ti {
+				continue
+			}
+			panic(errors.Wrapf(symbol.ErrDefine, "redefine terminal %v with %v", symbol.Dump(prev), symbol.Dump(ti)))
+		}
+		l.list = append(l.list, ti)
+		l.terminals[id] = ti
 	}
 	return l
-}
-
-func (l *lexer) add(t Terminal) {
-	id := t.Id()
-	if id == symbol.InvalidId {
-		panic(errors.Wrap(symbol.ErrDefine, "zero id"))
-	}
-	if prev, exists := l.terminals[id]; exists {
-		if prev == t {
-			return
-		}
-		panic(errors.Wrapf(symbol.ErrDefine, "redefine terminal %v with %v", symbol.Dump(prev), symbol.Dump(t)))
-	}
-	l.terminals[id] = t
 }
 
 func (l *lexer) IsTerminal(id symbol.Id) bool {
@@ -76,30 +75,28 @@ func (l *lexer) GetTerminalIdsSet() symbol.SetOfId {
 	return m
 }
 
-func (l *lexer) Match(state *State, expected []symbol.Id) (next *State, m *Match, err error) {
+func (l *lexer) Match(state *State, expected symbol.ReadonlySetOfId) (next *State, m *Match, err error) {
 	if !state.IsEOF() {
 		var (
-			t     Terminal
 			value any
 			ok    bool
 		)
-		// FIXME: Order may be important, so enhance to return the longest match.
-		//   Maybe Terminal can optionally have MatchLength() to return cont length if available.
-		for _, expect := range expected {
-			t = l.terminals[expect]
-			next, value = t.Match(state)
-			if err, ok = value.(error); ok {
-				return
-			}
-			if next != nil {
-				m = &Match{
-					Term:  expect,
-					Value: value,
+		for _, t := range l.list {
+			if expected.Has(t.Id()) {
+				next, value = t.Match(state)
+				if err, ok = value.(error); ok {
+					return
 				}
-				return
+				if next != nil {
+					m = &Match{
+						Term:  t.Id(),
+						Value: value,
+					}
+					return
+				}
 			}
 		}
 	}
-	err = WithSource(expectationError(expected, l.terminals), state)
+	err = WithSource(expectationError(expected, l.list), state)
 	return
 }

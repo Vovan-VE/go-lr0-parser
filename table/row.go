@@ -15,8 +15,8 @@ import (
 type Row interface {
 	// AcceptEof returns true if this state accepts EOF
 	AcceptEof() bool
-	// Terminals returns all terminals possible in this state
-	Terminals() []symbol.Id
+	// TerminalsSet returns all terminals possible in this state
+	TerminalsSet() symbol.ReadonlySetOfId
 	// TerminalAction returns next state index for the given terminal
 	TerminalAction(id symbol.Id) (StateIndex, bool)
 	// GotoAction returns next state index for the given non-terminal
@@ -29,8 +29,9 @@ type Row interface {
 
 func newRow() *row {
 	return &row{
-		terminals: make(stateActions),
-		gotos:     make(stateActions),
+		terminalsSet: symbol.NewSetOfId(),
+		terminals:    make(stateActions),
+		gotos:        make(stateActions),
 	}
 }
 
@@ -45,10 +46,10 @@ func (s stateActions) dump(indent string) string {
 }
 
 type row struct {
-	acceptEof bool
-	terminals stateActions
-	gotos     stateActions
-	// REFACT: this both can be merged together, add `terminals []Id` for `Terminals()`
+	acceptEof    bool
+	terminalsSet symbol.SetOfId
+	terminals    stateActions
+	gotos        stateActions
 
 	reduceRule grammar.RuleImplementation
 }
@@ -59,13 +60,7 @@ func (r *row) SetAcceptEof()   { r.acceptEof = true }
 func (r *row) ReduceRule() grammar.RuleImplementation     { return r.reduceRule }
 func (r *row) SetReduceRule(v grammar.RuleImplementation) { r.reduceRule = v }
 
-func (r *row) Terminals() []symbol.Id {
-	ret := make([]symbol.Id, 0, len(r.terminals))
-	for id := range r.terminals {
-		ret = append(ret, id)
-	}
-	return ret
-}
+func (r *row) TerminalsSet() symbol.ReadonlySetOfId { return r.terminalsSet }
 
 func (r *row) TerminalAction(id symbol.Id) (StateIndex, bool) {
 	idx, ok := r.terminals[id]
@@ -79,6 +74,7 @@ func (r *row) SetTerminalAction(id symbol.Id, idx StateIndex) {
 	if v, ok := r.terminals[id]; ok && v != idx {
 		panic(errors.New("already was set to different index"))
 	}
+	r.terminalsSet.Add(id)
 	r.terminals[id] = idx
 }
 

@@ -54,14 +54,15 @@ func TestLexer_Match(t *testing.T) {
 
 	l := New(
 		Name("Int", NewFunc(tInt, matchDigits)),
+		// ++ first, + after
+		Name("Increment", NewFixedStr(tInc, "++")),
 		Name("Plus", NewFixedStr(tPlus, "+")),
 		Name("Minus", NewFixedStr(tMinus, "-")),
-		Name("Increment", NewFixedStr(tInc, "++")),
 	)
 
 	start := NewState([]byte("38+23-19++"))
 
-	a, m, err := l.Match(start, []symbol.Id{tInt})
+	a, m, err := l.Match(start, symbol.NewSetOfId(tInt))
 	if err != nil {
 		t.Fatalf("a: match failed: %+v", err)
 	}
@@ -75,7 +76,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("a: offset", a.Offset())
 	}
 
-	b, m, err := l.Match(a, []symbol.Id{tPlus, tMinus})
+	b, m, err := l.Match(a, symbol.NewSetOfId(tPlus, tMinus))
 	if err != nil {
 		t.Fatalf("b: match failed: %+v", err)
 	}
@@ -86,7 +87,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("b: offset", b.Offset())
 	}
 
-	c, m, err := l.Match(b, []symbol.Id{tInt})
+	c, m, err := l.Match(b, symbol.NewSetOfId(tInt))
 	if err != nil {
 		t.Fatalf("c: match failed: %+v", err)
 	}
@@ -97,7 +98,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("c: offset", c.Offset())
 	}
 
-	d, m, err := l.Match(c, []symbol.Id{tPlus, tMinus})
+	d, m, err := l.Match(c, symbol.NewSetOfId(tPlus, tMinus))
 	if err != nil {
 		t.Fatalf("d: match failed: %+v", err)
 	}
@@ -108,7 +109,7 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("d: offset", d.Offset())
 	}
 
-	e, m, err := l.Match(d, []symbol.Id{tInt})
+	e, m, err := l.Match(d, symbol.NewSetOfId(tInt))
 	if err != nil {
 		t.Fatalf("e: match failed: %+v", err)
 	}
@@ -120,7 +121,7 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// ++ first, then +
-	f1, m, err := l.Match(e, []symbol.Id{tInc, tPlus})
+	f1, m, err := l.Match(e, symbol.NewSetOfId(tInc, tPlus))
 	if err != nil {
 		t.Fatalf("f1: match failed: %+v", err)
 	}
@@ -131,26 +132,26 @@ func TestLexer_Match(t *testing.T) {
 		t.Fatal("f1: offset", f1.Offset())
 	}
 
-	// + first, then ++
-	f2, m, err := l.Match(e, []symbol.Id{tPlus, tInc})
+	// + first, then ++ - anyway ++ match first due to definition order
+	f2, m, err := l.Match(e, symbol.NewSetOfId(tPlus, tInc))
 	if err != nil {
 		t.Fatalf("f2: match failed: %+v", err)
 	}
-	if v, ok := m.Value.(string); m.Term != tPlus || !ok || v != "+" {
+	if v, ok := m.Value.(string); m.Term != tInc || !ok || v != "++" {
 		t.Fatalf("f2: match wrong: %+v", m)
 	}
-	if f2.Offset() != 9 {
+	if f2.Offset() != 10 {
 		t.Fatal("f2: offset", f2.Offset())
 	}
 
 	// no match
-	_, _, err = l.Match(e, []symbol.Id{tMinus, tInt})
+	_, _, err = l.Match(e, symbol.NewSetOfId(tMinus, tInt))
 	if !errors.Is(err, ErrParse) {
 		t.Fatal("no expected: wrong error", err)
 	}
 	const (
-		expectStr     = `expected Minus or Int: parse error near ⟪38+23-19⟫⏵⟪++⟫`
-		expectStrPlus = `expected Minus or Int: parse error near:
+		expectStr     = `expected Int or Minus: parse error near ⟪38+23-19⟫⏵⟪++⟫`
+		expectStrPlus = `expected Int or Minus: parse error near:
 38+23-19++
 --------^
 `
@@ -163,13 +164,13 @@ func TestLexer_Match(t *testing.T) {
 	}
 
 	// EOF
-	_, _, err = l.Match(start.to(9000), []symbol.Id{tInt, tPlus, tMinus, tInc})
+	_, _, err = l.Match(start.to(9000), symbol.NewSetOfId(tInt, tPlus, tMinus, tInc))
 	if !errors.Is(err, ErrParse) {
 		t.Fatal("eof: wrong error", err)
 	}
 	const (
-		expectEofStr     = `expected Int, Plus, Minus or Increment: parse error near ⟪38+23-19++⟫⏵<EOF>`
-		expectEofStrPlus = `expected Int, Plus, Minus or Increment: parse error near:
+		expectEofStr     = `expected Int, Increment, Plus or Minus: parse error near ⟪38+23-19++⟫⏵<EOF>`
+		expectEofStrPlus = `expected Int, Increment, Plus or Minus: parse error near:
 38+23-19++<EOF>
 ----------^
 `

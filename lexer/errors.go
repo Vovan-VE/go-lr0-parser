@@ -44,10 +44,13 @@ func WithSource(err error, s *State) error {
 	}
 }
 
-func expectationError(expected []symbol.Id, terminals termMap) error {
+func expectationError(expected symbol.ReadonlySetOfId, terminals []Terminal) error {
 	s := "expected "
-	last := len(expected) - 1
-	for i, id := range expected {
+	i, last := 0, expected.Count()-1
+	for _, t := range terminals {
+		if !expected.Has(t.Id()) {
+			continue
+		}
 		if i > 0 {
 			if i < last {
 				s += ", "
@@ -55,7 +58,8 @@ func expectationError(expected []symbol.Id, terminals termMap) error {
 				s += " or "
 			}
 		}
-		s += symbol.Dump(terminals[id])
+		i++
+		s += symbol.Dump(t)
 	}
 	return NewParseError(s)
 }
