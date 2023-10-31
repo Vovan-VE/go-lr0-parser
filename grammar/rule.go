@@ -1,13 +1,20 @@
 package grammar
 
 import (
+	"fmt"
+
+	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/lexer"
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
 // Rule is one of possible definition for a non-Terminal
 type Rule interface {
-	symbol.Rule
+	fmt.Stringer
+	// Subject of the rule
+	Subject() symbol.Id
+	// HasEOF tells whether EOF must be found in the end of input
+	HasEOF() bool
 	// Definition of what it consists of
 	Definition() []symbol.Id
 }
@@ -29,7 +36,7 @@ type RuleImplementation interface {
 func NewRule(subject symbol.Id, definition []symbol.Id, calcHandler any) RuleDefinition {
 	return &ruleDefinition{
 		Rule: &rule{
-			Rule:       symbol.NewRule(subject),
+			subject:    subject,
 			definition: definition,
 		},
 		calcHandler: calcHandler,
@@ -41,7 +48,8 @@ func NewRule(subject symbol.Id, definition []symbol.Id, calcHandler any) RuleDef
 func NewRuleMain(subject symbol.Id, definition []symbol.Id, calcHandler any) RuleDefinition {
 	return &ruleDefinition{
 		Rule: &rule{
-			Rule:       symbol.WithEOF(symbol.NewRule(subject)),
+			subject:    subject,
+			eof:        true,
 			definition: definition,
 		},
 		calcHandler: calcHandler,
@@ -49,6 +57,18 @@ func NewRuleMain(subject symbol.Id, definition []symbol.Id, calcHandler any) Rul
 }
 
 func ToImplementation(rd RuleDefinition, l lexer.HiddenRegistry) RuleImplementation {
+	defer func() {
+		e := recover()
+		if e == nil {
+			return
+		}
+		err, ok := e.(error)
+		if !ok || !errors.Is(err, symbol.ErrDefine) {
+			panic(e)
+		}
+		panic(errors.Wrapf(err, "rule <%s>", rd))
+	}()
+
 	hidden := whichHidden(l, rd)
 	return &ruleImplementation{
 		Rule:   rd,
@@ -58,11 +78,25 @@ func ToImplementation(rd RuleDefinition, l lexer.HiddenRegistry) RuleImplementat
 }
 
 type rule struct {
-	symbol.Rule
+	subject    symbol.Id
+	eof        bool
 	definition []symbol.Id
 }
 
+func (r *rule) Subject() symbol.Id      { return r.subject }
+func (r *rule) HasEOF() bool            { return r.eof }
 func (r *rule) Definition() []symbol.Id { return r.definition }
+
+func (r *rule) String() string {
+	s := fmt.Sprintf("#%d :", r.subject)
+	for _, id := range r.definition {
+		s += fmt.Sprintf(" #%d", id)
+	}
+	if r.eof {
+		s += " $"
+	}
+	return s
+}
 
 type ruleDefinition struct {
 	Rule
