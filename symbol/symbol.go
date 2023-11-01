@@ -4,13 +4,16 @@ import (
 	"fmt"
 )
 
-// Id is a base identifier for a Symbol
+// Id is an identifier for terminals and non-terminals
 //
-// Zero value must not be user as a valid id:
+// Zero value must not be used:
 //
 //	const (
-//		NValue symbol.Id = iota + 1
-//		NProduct
+//		TInt symbol.Id = iota + 1
+//		TPlus
+//		TMinus
+//
+//		NValue
 //		NSum
 //		NGoal
 //	)
@@ -41,10 +44,11 @@ func Dump(m Meta) string {
 }
 
 type ReadonlySetOfId interface {
-	IsEmpty() bool
 	Count() int
 	Has(id Id) bool
-	ForEach(fn func(Id))
+
+	//IsEmpty() bool
+	//ForEach(fn func(Id))
 }
 
 type SetOfId map[Id]struct{}
@@ -60,15 +64,15 @@ func (s SetOfId) Add(id ...Id) SetOfId {
 	return s
 }
 
-func (s SetOfId) Remove(id Id)  { delete(s, id) }
-func (s SetOfId) IsEmpty() bool { return len(s) == 0 }
-func (s SetOfId) Count() int    { return len(s) }
+func (s SetOfId) Remove(id Id) { delete(s, id) }
+func (s SetOfId) Count() int   { return len(s) }
 
-func (s SetOfId) ForEach(fn func(Id)) {
-	for id := range s {
-		fn(id)
-	}
-}
+//func (s SetOfId) IsEmpty() bool { return len(s) == 0 }
+//func (s SetOfId) ForEach(fn func(Id)) {
+//	for id := range s {
+//		fn(id)
+//	}
+//}
 
 func (s SetOfId) Has(id Id) bool {
 	_, ok := s[id]

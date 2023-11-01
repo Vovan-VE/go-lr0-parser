@@ -82,7 +82,7 @@ func validateDeterministic(items []item, g grammar.Grammar) {
 		for _, it := range terminals {
 			restTerminals.Remove(it.Expected())
 		}
-		if restTerminals.IsEmpty() {
+		if restTerminals.Count() == 0 {
 			panic(errors.WithStack(ErrConflictShiftReduce))
 		}
 	}
