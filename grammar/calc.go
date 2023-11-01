@@ -7,11 +7,11 @@ import (
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
-type CalcFunc func([]any) (any, error)
+type calcFunc func([]any) (any, error)
 
 var typeOfError = reflect.TypeOf((*error)(nil)).Elem()
 
-func prepareHandler(fn any, expectArgsCount int) CalcFunc {
+func prepareHandler(fn any, expectArgsCount int) calcFunc {
 	if fn == nil && expectArgsCount == 1 {
 		return bubble
 	}

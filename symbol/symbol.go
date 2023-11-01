@@ -21,29 +21,21 @@ type Id int
 
 const InvalidId Id = 0
 
-// Meta is common interface to describe Symbol meta data
-type Meta interface {
+// Symbol is common interface to describe Symbol meta data
+type Symbol interface {
 	Id() Id
 	// Name returns a human-recognizable name to not mess up with numeric Term
 	Name() string
-	// IsHidden returns whether the token is hidden
-	//
-	// Hidden token does not produce a value to calc non-terminal value.
-	// For example if in the following rule:
-	//	Sum : Sum plus Val
-	// a `plus` token is hidden, then only two values - value of `Sum` and value
-	// of `Val` - will be passed to calc function: `func(any, any) any`
-	IsHidden() bool
 }
 
-func Dump(m Meta) string {
+func Dump(m Symbol) string {
 	if s := m.Name(); s != "" {
 		return s
 	}
 	return fmt.Sprintf("#%v", m.Id())
 }
 
-type ReadonlySetOfId interface {
+type ReadonlySet interface {
 	Count() int
 	Has(id Id) bool
 
@@ -51,30 +43,30 @@ type ReadonlySetOfId interface {
 	//ForEach(fn func(Id))
 }
 
-type SetOfId map[Id]struct{}
+type Set map[Id]struct{}
 
-func NewSetOfId(id ...Id) SetOfId {
-	return make(SetOfId).Add(id...)
+func NewSetOfId(id ...Id) Set {
+	return make(Set).Add(id...)
 }
 
-func (s SetOfId) Add(id ...Id) SetOfId {
+func (s Set) Add(id ...Id) Set {
 	for _, v := range id {
 		s[v] = struct{}{}
 	}
 	return s
 }
 
-func (s SetOfId) Remove(id Id) { delete(s, id) }
-func (s SetOfId) Count() int   { return len(s) }
+func (s Set) Remove(id Id) { delete(s, id) }
+func (s Set) Count() int   { return len(s) }
 
-//func (s SetOfId) IsEmpty() bool { return len(s) == 0 }
-//func (s SetOfId) ForEach(fn func(Id)) {
+//func (s Set) IsEmpty() bool { return len(s) == 0 }
+//func (s Set) ForEach(fn func(Id)) {
 //	for id := range s {
 //		fn(id)
 //	}
 //}
 
-func (s SetOfId) Has(id Id) bool {
+func (s Set) Has(id Id) bool {
 	_, ok := s[id]
 	return ok
 }

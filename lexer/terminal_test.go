@@ -8,8 +8,8 @@ import (
 
 const tTemp symbol.Id = 17
 
-func TestFixed_Match(t *testing.T) {
-	spaceship := NewFixed(tTemp, []byte{'<', '=', '>'})
+func TestFixedBytes_Match(t *testing.T) {
+	spaceship := NewTerm(tTemp, "spaceship").Byte('<', '=', '>')
 
 	state := NewState([]byte("42 <=> 37"))
 
@@ -38,7 +38,7 @@ func TestFixed_Match(t *testing.T) {
 }
 
 func TestFixedStr_Match(t *testing.T) {
-	spaceship := NewFixedStr(tTemp, "<=>")
+	spaceship := NewTerm(tTemp, "spaceship").Str("<=>")
 
 	state := NewState([]byte("42 <=> 37"))
 
@@ -67,7 +67,7 @@ func TestFixedStr_Match(t *testing.T) {
 }
 
 func TestFunc_Match(t *testing.T) {
-	tIdent := NewFunc(tTemp, matchIdentifier)
+	tIdent := NewTerm(tTemp, "ident").Func(matchIdentifier)
 
 	a := NewState(source)
 
@@ -130,25 +130,16 @@ func isAlpha(b byte) bool {
 func isDigit(b byte) bool { return b >= '0' && b <= '9' }
 
 func TestName(t *testing.T) {
-	a := NewFunc(tTemp, matchIdentifier)
 	const name = "T_IDENT"
-	b := Name(name, a)
-
-	if a.Name() != "" {
+	a := NewTerm(tTemp, name).Func(matchIdentifier)
+	if a.Name() != name {
 		t.Errorf("a name was set to %q", a.Name())
-	}
-	if b.Name() != name {
-		t.Errorf("b name is %q", b.Name())
 	}
 }
 
 func TestHide(t *testing.T) {
-	a := NewFunc(tTemp, matchIdentifier)
-	b := Hide(a)
-	if a.IsHidden() {
-		t.Error("a is hidden")
-	}
-	if !b.IsHidden() {
-		t.Error("b is not hidden")
+	a := NewTerm(tTemp, "ident").Hide().Func(matchIdentifier)
+	if !a.IsHidden() {
+		t.Error("a is not hidden")
 	}
 }

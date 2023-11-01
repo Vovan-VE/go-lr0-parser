@@ -17,7 +17,7 @@ func TestLexer_Add(t *testing.T) {
 	)
 
 	l := New(
-		Name("Identifier", NewFunc(tIdent, matchIdentifier)),
+		NewTerm(tIdent, "Identifier").Func(matchIdentifier),
 	).(*lexer)
 	if len(l.terminals) != 1 {
 		t.Errorf("where is it? %#v", l.terminals)
@@ -27,9 +27,9 @@ func TestLexer_Add(t *testing.T) {
 	}
 
 	l = New(
-		Name("Identifier", NewFunc(tIdent, matchIdentifier)),
-		Name("Plus", NewFixedStr(tPlus, "+")),
-		Name("Minus", NewFixedStr(tMinus, "-")),
+		NewTerm(tIdent, "Identifier").Func(matchIdentifier),
+		NewTerm(tPlus, "Plus").Str("+"),
+		NewTerm(tMinus, "Minus").Str("-"),
 	).(*lexer)
 	if len(l.terminals) != 3 {
 		t.Errorf("what just happened? %#v", l.terminals)
@@ -38,8 +38,8 @@ func TestLexer_Add(t *testing.T) {
 	t.Run("panic", func(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine)
 		New(
-			NewFixedStr(tPlus, "+"),
-			NewFixedStr(tPlus, "+="),
+			NewTerm(tPlus, "Plus").Str("+"),
+			NewTerm(tPlus, "PlusAssign").Str("+="),
 		)
 	})
 }
@@ -53,11 +53,11 @@ func TestLexer_Match(t *testing.T) {
 	)
 
 	l := New(
-		Name("Int", NewFunc(tInt, matchDigits)),
+		NewTerm(tInt, "Int").Func(matchDigits),
 		// ++ first, + after
-		Name("Increment", NewFixedStr(tInc, "++")),
-		Name("Plus", NewFixedStr(tPlus, "+")),
-		Name("Minus", NewFixedStr(tMinus, "-")),
+		NewTerm(tInc, "Increment").Str("++"),
+		NewTerm(tPlus, "Plus").Str("+"),
+		NewTerm(tMinus, "Minus").Str("-"),
 	)
 
 	start := NewState([]byte("38+23-19++"))

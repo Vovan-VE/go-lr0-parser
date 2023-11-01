@@ -1,4 +1,4 @@
-package lr0parser
+package parser
 
 import (
 	"strconv"
@@ -28,26 +28,29 @@ var errDivZero = errors.New("division by zero")
 
 var g = grammar.New(
 	[]lexer.Terminal{
-		lexer.NewFunc(tInt, matchDigits),
-		lexer.Hide(lexer.NewFixedStr(tPlus, "+")),
-		lexer.Hide(lexer.NewFixedStr(tMinus, "-")),
-		lexer.Hide(lexer.NewFixedStr(tMul, "*")),
-		lexer.Hide(lexer.NewFixedStr(tDiv, "/")),
+		lexer.NewTerm(tInt, "int").Func(matchDigits),
+		lexer.NewTerm(tPlus, `"+"`).Hide().Str("+"),
+		lexer.NewTerm(tMinus, `"-"`).Hide().Str("-"),
+		lexer.NewTerm(tMul, `"*"`).Hide().Str("*"),
+		lexer.NewTerm(tDiv, `"/"`).Hide().Str("/"),
 	},
-	[]grammar.RuleDefinition{
-		grammar.NewRuleMain(nGoal, []symbol.Id{nSum}, nil),
-		grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nProd}, func(a, b int) int { return a + b }),
-		grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nProd}, func(a, b int) int { return a - b }),
-		grammar.NewRule(nSum, []symbol.Id{nProd}, nil),
-		grammar.NewRule(nProd, []symbol.Id{nProd, tMul, nVal}, func(a, b int) int { return a * b }),
-		grammar.NewRule(nProd, []symbol.Id{nProd, tDiv, nVal}, func(a, b int) (int, error) {
-			if b == 0 {
-				return 0, errDivZero
-			}
-			return a / b, nil
-		}),
-		grammar.NewRule(nProd, []symbol.Id{nVal}, nil),
-		grammar.NewRule(nVal, []symbol.Id{tInt}, nil),
+	[]grammar.NonTerminalDefinition{
+		grammar.NewNT(nGoal, "Goal").Main().Is(nSum),
+		grammar.NewNT(nSum, "Sum").
+			Is(nSum, tPlus, nProd).Do(func(a, b int) int { return a + b }).
+			Is(nSum, tMinus, nProd).Do(func(a, b int) int { return a - b }).
+			Is(nProd),
+		grammar.NewNT(nProd, "Prod").
+			Is(nProd, tMul, nVal).Do(func(a, b int) int { return a * b }).
+			Is(nProd, tDiv, nVal).Do(
+			func(a, b int) (int, error) {
+				if b == 0 {
+					return 0, errDivZero
+				}
+				return a / b, nil
+			}).
+			Is(nVal),
+		grammar.NewNT(nVal, "Val").Is(tInt),
 	},
 )
 

@@ -22,18 +22,22 @@ const (
 
 var testGrammar = grammar.New(
 	[]lexer.Terminal{
-		lexer.NewFixedStr(tZero, "0"),
-		lexer.NewFixedStr(tOne, "1"),
-		lexer.NewFixedStr(tPlus, "+"),
-		lexer.NewFixedStr(tMinus, "-"),
+		lexer.NewTerm(tZero, "zero").Str("0"),
+		lexer.NewTerm(tOne, "one").Str("1"),
+		lexer.NewTerm(tPlus, `"+"`).Str("+"),
+		lexer.NewTerm(tMinus, `"-"`).Str("-"),
 	},
-	[]grammar.RuleDefinition{
-		grammar.NewRuleMain(nGoal, []symbol.Id{nSum}, nil),
-		grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal}, testCalc3),
-		grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal}, testCalc3),
-		grammar.NewRule(nSum, []symbol.Id{nVal}, nil),
-		grammar.NewRule(nVal, []symbol.Id{tZero}, nil),
-		grammar.NewRule(nVal, []symbol.Id{tOne}, nil),
+	[]grammar.NonTerminalDefinition{
+		grammar.NewNT(nGoal, "Goal").
+			Main().
+			Is(nSum),
+		grammar.NewNT(nSum, "Sum").
+			Is(nSum, tPlus, nVal).Do(testCalc3).
+			Is(nSum, tMinus, nVal).Do(testCalc3).
+			Is(nVal),
+		grammar.NewNT(nVal, "Val").
+			Is(tZero).
+			Is(tOne),
 	},
 )
 var testTable = table.New(testGrammar)

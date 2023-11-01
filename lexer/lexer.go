@@ -16,7 +16,7 @@ type Lexer interface {
 	// IsTerminal returns true if the given Id is one of defined Terminal
 	IsTerminal(id symbol.Id) bool
 	// GetTerminalIdsSet returns new set of all defined Id
-	GetTerminalIdsSet() symbol.SetOfId
+	GetTerminalIdsSet() symbol.Set
 	// Match tries to parse one of expected Terminals in the given State.
 	//
 	// Order in `expected` does not matter. Only definition order ot Terminals
@@ -26,7 +26,7 @@ type Lexer interface {
 	// rest unexpected Terminals.
 	//
 	// At EOF or when nothing matched, a ErrParse wrapped error will be returned.
-	Match(state *State, expected symbol.ReadonlySetOfId) (next *State, m *Match, err error)
+	Match(state *State, expected symbol.ReadonlySet) (next *State, m *Match, err error)
 }
 
 type termMap = map[symbol.Id]Terminal
@@ -34,6 +34,7 @@ type termMap = map[symbol.Id]Terminal
 type lexer struct {
 	list      []Terminal
 	terminals termMap
+	// TODO: whitespaces - ignore terminals on every match
 }
 
 // New creates a new empty Configurable
@@ -69,7 +70,7 @@ func (l *lexer) IsHidden(id symbol.Id) bool {
 	return ok && t.IsHidden()
 }
 
-func (l *lexer) GetTerminalIdsSet() symbol.SetOfId {
+func (l *lexer) GetTerminalIdsSet() symbol.Set {
 	m := symbol.NewSetOfId()
 	for id := range l.terminals {
 		m.Add(id)
@@ -77,7 +78,7 @@ func (l *lexer) GetTerminalIdsSet() symbol.SetOfId {
 	return m
 }
 
-func (l *lexer) Match(state *State, expected symbol.ReadonlySetOfId) (*State, *Match, error) {
+func (l *lexer) Match(state *State, expected symbol.ReadonlySet) (*State, *Match, error) {
 	if !state.IsEOF() {
 		var (
 			altNext *State

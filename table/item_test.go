@@ -15,9 +15,13 @@ func TestItem_IsEqual(t *testing.T) {
 		tPlus
 		nSum
 	)
+	l := lexer.New(
+		lexer.NewTerm(tInt, "int").Str("1"),
+	)
+	ntDef := grammar.NewNT(nSum, "Sum").Is(tInt, tPlus, tInt).Do(calcStub3)
 
-	rule1orig := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt}, calcStub3), stubHidden)
-	rule1copy := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{tInt, tPlus, tInt}, calcStub3), stubHidden)
+	rule1orig := ntDef.GetRules(l)[0]
+	rule1copy := ntDef.GetRules(l)[0]
 
 	s1 := newItem(rule1orig)
 
@@ -44,7 +48,13 @@ func TestItem_Navigate(t *testing.T) {
 		nSum
 		nValue
 	)
-	r := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nValue, tPlus, tInt}, calcStub3), stubHidden)
+	l := lexer.New(
+		lexer.NewTerm(tInt, "int").Str("1"),
+		lexer.NewTerm(tPlus, "plus").Str("+"),
+	)
+	ntDef := grammar.NewNT(nSum, "Sum").Is(nValue, tPlus, tInt).Do(calcStub3)
+
+	r := ntDef.GetRules(l)[0]
 	i0 := newItem(r)
 	if i0.Expected() != nValue {
 		t.Error("i0 expect() wrong: ", i0.Expected())

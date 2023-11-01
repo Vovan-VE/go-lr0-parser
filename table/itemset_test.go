@@ -19,28 +19,24 @@ const (
 	nGoal
 )
 
-var (
-	testRuleGoal     = grammar.NewRuleMain(nGoal, []symbol.Id{nSum}, nil)
-	testRuleSumPlus  = grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal}, calcStub3)
-	testRuleSumMinus = grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal}, calcStub3)
-	testRuleSumVal   = grammar.NewRule(nSum, []symbol.Id{nVal}, nil)
-	testRuleValZero  = grammar.NewRule(nVal, []symbol.Id{tZero}, nil)
-	testRuleValOne   = grammar.NewRule(nVal, []symbol.Id{tOne}, nil)
-)
 var testGrammar = grammar.New(
 	[]lexer.Terminal{
-		lexer.NewFixedStr(tZero, "0"),
-		lexer.NewFixedStr(tOne, "1"),
-		lexer.NewFixedStr(tPlus, "+"),
-		lexer.NewFixedStr(tMinus, "-"),
+		lexer.NewTerm(tZero, "zero").Str("0"),
+		lexer.NewTerm(tOne, "one").Str("1"),
+		lexer.NewTerm(tPlus, `"+"`).Str("+"),
+		lexer.NewTerm(tMinus, `"-"`).Str("-"),
 	},
-	[]grammar.RuleDefinition{
-		testRuleGoal,
-		testRuleSumPlus,
-		testRuleSumMinus,
-		testRuleSumVal,
-		testRuleValZero,
-		testRuleValOne,
+	[]grammar.NonTerminalDefinition{
+		grammar.NewNT(nGoal, "Goal").
+			Main().
+			Is(nSum),
+		grammar.NewNT(nSum, "Sum").
+			Is(nSum, tPlus, nVal).Do(calcStub3).
+			Is(nSum, tMinus, nVal).Do(calcStub3).
+			Is(nVal),
+		grammar.NewNT(nVal, "Val").
+			Is(tZero).
+			Is(tOne),
 	},
 )
 var (
@@ -106,10 +102,23 @@ func TestItemset_HasFinalItem(t *testing.T) {
 }
 
 func TestItemset_IsEqual(t *testing.T) {
-	r1 := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nSum, tPlus, nVal}, calcStub3), stubHidden)
-	r2 := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nSum, tMinus, nVal}, calcStub3), stubHidden)
-	r3 := grammar.ToImplementation(grammar.NewRule(nSum, []symbol.Id{nVal}, nil), stubHidden)
-	r4 := grammar.ToImplementation(grammar.NewRule(nVal, []symbol.Id{tZero}, nil), stubHidden)
+	l := lexer.New(
+		lexer.NewTerm(tZero, "zero").Str("0"),
+		lexer.NewTerm(tPlus, "plus").Str("+"),
+		lexer.NewTerm(tMinus, "minus").Str("-"),
+	)
+	rulesSum := grammar.NewNT(nSum, "Sum").
+		Is(nSum, tPlus, nVal).Do(calcStub3).
+		Is(nSum, tMinus, nVal).Do(calcStub3).
+		Is(nVal).
+		GetRules(l)
+	rulesVal := grammar.NewNT(nVal, "Val").
+		Is(tZero).
+		GetRules(l)
+	r1 := rulesSum[0]
+	r2 := rulesSum[1]
+	r3 := rulesSum[2]
+	r4 := rulesVal[0]
 
 	s0 := itemset{items: []item{
 		newItem(r1),

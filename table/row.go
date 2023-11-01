@@ -16,13 +16,13 @@ type Row interface {
 	// AcceptEof returns true if this state accepts EOF
 	AcceptEof() bool
 	// TerminalsSet returns all terminals possible in this state
-	TerminalsSet() symbol.ReadonlySetOfId
+	TerminalsSet() symbol.ReadonlySet
 	// TerminalAction returns next state index for the given terminal
 	TerminalAction(id symbol.Id) (StateIndex, bool)
 	// GotoAction returns next state index for the given non-terminal
 	GotoAction(id symbol.Id) (StateIndex, bool)
 	// ReduceRule returns a reduce rule if available or nil otherwise
-	ReduceRule() grammar.RuleImplementation
+	ReduceRule() grammar.Rule
 	// IsReduceOnly returns true if this state can only be used for reduce
 	IsReduceOnly() bool
 }
@@ -37,6 +37,7 @@ func newRow() *row {
 
 type stateActions map[symbol.Id]StateIndex
 
+// TODO: names from grammar
 func (s stateActions) dump(indent string) string {
 	res := ""
 	for _, p := range helpers.MapSortedInt(s) {
@@ -47,20 +48,20 @@ func (s stateActions) dump(indent string) string {
 
 type row struct {
 	acceptEof    bool
-	terminalsSet symbol.SetOfId
+	terminalsSet symbol.Set
 	terminals    stateActions
 	gotos        stateActions
 
-	reduceRule grammar.RuleImplementation
+	reduceRule grammar.Rule
 }
 
 func (r *row) AcceptEof() bool { return r.acceptEof }
 func (r *row) SetAcceptEof()   { r.acceptEof = true }
 
-func (r *row) ReduceRule() grammar.RuleImplementation     { return r.reduceRule }
-func (r *row) SetReduceRule(v grammar.RuleImplementation) { r.reduceRule = v }
+func (r *row) ReduceRule() grammar.Rule     { return r.reduceRule }
+func (r *row) SetReduceRule(v grammar.Rule) { r.reduceRule = v }
 
-func (r *row) TerminalsSet() symbol.ReadonlySetOfId { return r.terminalsSet }
+func (r *row) TerminalsSet() symbol.ReadonlySet { return r.terminalsSet }
 
 func (r *row) TerminalAction(id symbol.Id) (StateIndex, bool) {
 	idx, ok := r.terminals[id]
@@ -97,6 +98,7 @@ func (r *row) IsReduceOnly() bool {
 		r.reduceRule != nil
 }
 
+// TODO: names from grammar
 func (r *row) dump(indent string) string {
 	res := indent + "EOF: "
 	if r.acceptEof {

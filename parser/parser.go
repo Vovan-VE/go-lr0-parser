@@ -1,4 +1,4 @@
-package lr0parser
+package parser
 
 import (
 	"github.com/pkg/errors"
@@ -9,6 +9,9 @@ import (
 )
 
 type Parser interface {
+	// Parse parses the whole input stream State.
+	//
+	// Returns either evaluated result or error.
 	Parse(input *lexer.State) (result any, err error)
 }
 
@@ -45,7 +48,7 @@ Goal:
 				// if this happens ever?
 				// TODO: no reduce rule - unexpected input
 				//st.Current().TerminalsSet()
-				return nil, lexer.WithSource(errors.Wrap(lexer.ErrParse, "unexpected input 1"), at)
+				return nil, lexer.WithSource(lexer.NewParseError("unexpected input 1"), at)
 			}
 		}
 
@@ -68,7 +71,7 @@ Goal:
 				if m == nil {
 					break Goal
 				}
-				return nil, lexer.WithSource(errors.Wrap(lexer.ErrParse, "unexpected input instead of EOF"), at)
+				return nil, lexer.WithSource(lexer.NewParseError("unexpected input instead of EOF"), at)
 			}
 
 			ok, err = st.Reduce()
@@ -79,7 +82,7 @@ Goal:
 			if !ok {
 				// TODO: no reduce rule - unexpected input
 				//st.Current().TerminalsSet()
-				return nil, lexer.WithSource(errors.Wrap(lexer.ErrParse, "unexpected input 3"), at)
+				return nil, lexer.WithSource(lexer.NewParseError("unexpected input 3"), at)
 			}
 		}
 	}

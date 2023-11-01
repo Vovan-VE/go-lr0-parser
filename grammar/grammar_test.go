@@ -24,39 +24,40 @@ func TestNew(t *testing.T) {
 	)
 	var (
 		terminals = []lexer.Terminal{
-			lexer.NewFunc(tInt, matchDigits),
-			lexer.Hide(lexer.NewFixedStr(tPlus, "+")),
-			lexer.Hide(lexer.NewFixedStr(tMinus, "-")),
+			lexer.NewTerm(tInt, "integer").Func(matchDigits),
+			lexer.NewTerm(tPlus, "plus").Hide().Str("+"),
+			lexer.NewTerm(tMinus, "minus").Hide().Str("-"),
 		}
 	)
 
 	t.Run("panic: multiple main rules", func(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
-			if err.Error() != "another rule [2] has EOF flag too, previous was [1]: invalid definition" {
-				t.Fatal("wrong error message", err)
+			if err.Error() != "another rule Sum2 has Main flag too, previous was Sum1: invalid definition" {
+				t.Fatal("wrong error message:", err)
 			}
 		})
 
-		New(terminals, []RuleDefinition{
-			NewRule(nValue, []symbol.Id{tInt}, nil),
-			NewRuleMain(nSum, []symbol.Id{nValue}, nil),
-			NewRuleMain(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
-			NewRuleMain(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
+		New(terminals, []NonTerminalDefinition{
+			NewNT(nValue, "Value").Is(tInt),
+			NewNT(nSum, "Sum1").Main().Is(nValue),
+			NewNT(nSum, "Sum2").Main().Is(nSum, tPlus, nValue).Do(calcSum),
+			NewNT(nSum, "Sum3").Main().Is(nSum, tMinus, nValue).Do(calcSubtract),
 		})
 	})
 
 	t.Run("panic: rule subject is Terminal", func(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
-			if err.Error() != "rules[1] subject is Terminal: invalid definition" {
-				t.Fatal("wrong error message", err)
+			if err.Error() != "Non-Terminal Plus is Terminal: invalid definition" {
+				t.Fatal("wrong error message:", err)
 			}
 		})
 
-		New(terminals, []RuleDefinition{
-			NewRule(nValue, []symbol.Id{tInt}, nil),
-			NewRule(tPlus, []symbol.Id{nValue}, nil),
-			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
-			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
+		New(terminals, []NonTerminalDefinition{
+			NewNT(nValue, "Value").Is(tInt),
+			NewNT(tPlus, "Plus").Is(nValue),
+			NewNT(nSum, "Sum").
+				Is(nSum, tPlus, nValue).Do(calcSum).
+				Is(nSum, tMinus, nValue).Do(calcSubtract),
 		})
 	})
 
@@ -64,7 +65,7 @@ func TestNew(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
 			const (
 				expected = `undefined non-terminals without rules:
-- #100 in rules[0] definitions[0]
+- #100 in NT Sum rules[0] definitions[0]
 : invalid definition`
 			)
 			if err.Error() != expected {
@@ -72,10 +73,11 @@ func TestNew(t *testing.T) {
 			}
 		})
 
-		New(terminals, []RuleDefinition{
-			NewRule(nSum, []symbol.Id{nValue}, nil),
-			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
-			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
+		New(terminals, []NonTerminalDefinition{
+			NewNT(nSum, "Sum").
+				Is(nValue).
+				Is(nSum, tPlus, nValue).Do(calcSum).
+				Is(nSum, tMinus, nValue).Do(calcSubtract),
 		})
 	})
 
@@ -86,12 +88,13 @@ func TestNew(t *testing.T) {
 			}
 		})
 
-		New(terminals, []RuleDefinition{
-			NewRule(nValue, []symbol.Id{tInt}, nil),
-			NewRule(nSum, []symbol.Id{nValue}, nil),
-			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
-			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
-			NewRule(nGoal, []symbol.Id{nSum}, nil),
+		New(terminals, []NonTerminalDefinition{
+			NewNT(nValue, "Value").Is(tInt),
+			NewNT(nSum, "Sum").
+				Is(nValue).
+				Is(nSum, tPlus, nValue).Do(calcSum).
+				Is(nSum, tMinus, nValue).Do(calcSubtract),
+			NewNT(nGoal, "Goal").Is(nSum),
 		})
 	})
 
@@ -99,7 +102,7 @@ func TestNew(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
 			const (
 				expected = `following Terminals are not used in any Rule:
-- #4
+- div
 - MUL
 : invalid definition`
 			)
@@ -110,25 +113,27 @@ func TestNew(t *testing.T) {
 
 		terminals2 := append(
 			terminals,
-			lexer.NewFixedStr(tDiv, "/"),
-			lexer.Name("MUL", lexer.NewFixedStr(tMul, "*")),
+			lexer.NewTerm(tDiv, "div").Str("/"),
+			lexer.NewTerm(tMul, "MUL").Str("*"),
 		)
 
-		New(terminals2, []RuleDefinition{
-			NewRule(nValue, []symbol.Id{tInt}, nil),
-			NewRule(nSum, []symbol.Id{nValue}, nil),
-			NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
-			NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
-			NewRuleMain(nGoal, []symbol.Id{nSum}, nil),
+		New(terminals2, []NonTerminalDefinition{
+			NewNT(nValue, "Value").Is(tInt),
+			NewNT(nSum, "Sum").
+				Is(nValue).
+				Is(nSum, tPlus, nValue).Do(calcSum).
+				Is(nSum, tMinus, nValue).Do(calcSubtract),
+			NewNT(nGoal, "Goal").Main().Is(nSum),
 		})
 	})
 
-	g := New(terminals, []RuleDefinition{
-		NewRule(nValue, []symbol.Id{tInt}, nil),
-		NewRule(nSum, []symbol.Id{nValue}, nil),
-		NewRule(nSum, []symbol.Id{nSum, tPlus, nValue}, calcSum),
-		NewRule(nSum, []symbol.Id{nSum, tMinus, nValue}, calcSubtract),
-		NewRuleMain(nGoal, []symbol.Id{nSum}, nil),
+	g := New(terminals, []NonTerminalDefinition{
+		NewNT(nValue, "Value").Is(tInt),
+		NewNT(nSum, "Sum").
+			Is(nValue).
+			Is(nSum, tPlus, nValue).Do(calcSum).
+			Is(nSum, tMinus, nValue).Do(calcSubtract),
+		NewNT(nGoal, "Goal").Main().Is(nSum),
 	})
 
 	t.Run("main rule", func(t *testing.T) {

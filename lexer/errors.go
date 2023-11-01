@@ -12,8 +12,6 @@ var (
 	// ErrNegativeOffset will be raised by panic if some operation with State
 	// cause negative offset
 	ErrNegativeOffset = errors.New("negative position")
-)
-var (
 	// ErrParse is base error for run-time errors about parsing.
 	//
 	//	errors.Is(err, lexer.ErrParse)
@@ -29,12 +27,12 @@ func NewParseError(msg string) error {
 	}
 }
 
-// NewParseErrorf creates new Error by wrapping ErrParse
-func NewParseErrorf(format string, args ...any) error {
-	return &parseError{
-		error: errors.Wrapf(ErrParse, format, args...),
-	}
-}
+//// NewParseErrorf creates new Error by wrapping ErrParse
+//func NewParseErrorf(format string, args ...any) error {
+//	return &parseError{
+//		error: errors.Wrapf(ErrParse, format, args...),
+//	}
+//}
 
 // WithSource wraps the given error to append State info to error message
 func WithSource(err error, s *State) error {
@@ -44,7 +42,7 @@ func WithSource(err error, s *State) error {
 	}
 }
 
-func expectationError(expected symbol.ReadonlySetOfId, terminals []Terminal) error {
+func expectationError(expected symbol.ReadonlySet, terminals []Terminal) error {
 	s := "expected "
 	i, last := 0, expected.Count()-1
 	for _, t := range terminals {

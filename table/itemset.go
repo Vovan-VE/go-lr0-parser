@@ -108,11 +108,11 @@ func (s itemset) HasFinalItem() bool {
 }
 
 // ReduceRule returns reduction rule of this set if any, nil otherwise
-func (s itemset) ReduceRule() grammar.RuleImplementation {
+func (s itemset) ReduceRule() grammar.Rule {
 	for _, it := range s.items {
 		if !it.HasFurther() {
 			// this is the only due to Reduce-Reduce conflicts validation
-			return it.RuleImplementation
+			return it.Rule
 		}
 	}
 	return nil
