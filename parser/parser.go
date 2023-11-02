@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"io"
+
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/grammar"
 	"github.com/vovan-ve/go-lr0-parser/lexer"
@@ -41,12 +43,12 @@ Goal:
 		for st.Current().IsReduceOnly() {
 			ok, err = st.Reduce()
 			if err != nil {
-				// TODO: new error type with State attached
 				return nil, lexer.WithSource(err, at)
 			}
 			if !ok {
 				// if this happens ever?
-				// TODO: no reduce rule - unexpected input
+				// REFACT: looks like this will never happen now
+				// no reduce rule - unexpected input
 				//st.Current().TerminalsSet()
 				return nil, lexer.WithSource(lexer.NewParseError("unexpected input 1"), at)
 			}
@@ -55,8 +57,8 @@ Goal:
 		var m *lexer.Match
 		if !next.IsEOF() {
 			next, m, err = p.g.Match(next, st.Current().TerminalsSet())
-			if err != nil {
-				return nil, errors.Wrap(err, "unexpected input 2")
+			if err != nil && err != io.EOF {
+				return nil, errors.Wrap(err, "unexpected input")
 			}
 		}
 
@@ -76,13 +78,10 @@ Goal:
 
 			ok, err = st.Reduce()
 			if err != nil {
-				// TODO: new error type with State attached
 				return nil, lexer.WithSource(err, at)
 			}
 			if !ok {
-				// TODO: no reduce rule - unexpected input
-				//st.Current().TerminalsSet()
-				return nil, lexer.WithSource(lexer.NewParseError("unexpected input 3"), at)
+				return nil, lexer.WithSource(p.g.ExpectationError(st.Current().TerminalsSet(), "unexpected input"), at)
 			}
 		}
 	}

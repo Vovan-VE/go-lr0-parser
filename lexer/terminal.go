@@ -56,9 +56,24 @@ func NewTerm(id symbol.Id, name string) *TerminalFactory {
 	}
 }
 
-// TODO: whitespace Id, NewWhitespace()
-//   NewWhitespace().Func(matchWhiteSpaces),
-//   NewWhitespace("comment-line").Func(matchLineComment),
+// NewWhitespace can be used to define internal terminals to skip whitespaces
+//
+// Can be used multiple times to define different kinds of whitespaces.
+//
+// Whitespace tokens will be silently skipped before every terminal match
+func NewWhitespace() *TerminalFactory {
+	return &TerminalFactory{
+		meta: metaWS,
+	}
+}
+
+const (
+	tWhitespace symbol.Id = -iota - 1
+)
+
+var (
+	metaWS = meta{id: tWhitespace, name: "whitespace"}
+)
 
 // Hide sets "is hidden" flag for further Terminal `IsHidden()` result.
 func (t *TerminalFactory) Hide() *TerminalFactory {

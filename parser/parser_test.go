@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"unicode"
 
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/grammar"
@@ -33,6 +34,8 @@ var g = grammar.New(
 		lexer.NewTerm(tMinus, `"-"`).Hide().Str("-"),
 		lexer.NewTerm(tMul, `"*"`).Hide().Str("*"),
 		lexer.NewTerm(tDiv, `"/"`).Hide().Str("/"),
+
+		lexer.NewWhitespace().Func(matchWS),
 	},
 	[]grammar.NonTerminalDefinition{
 		grammar.NewNT(nGoal, "Goal").Main().Is(nSum),
@@ -59,7 +62,7 @@ func TestParser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		const result = 42*23/3 + 90/15 - 17*19
-		v, err := p.Parse(lexer.NewState([]byte("42*23/3+90/15-17*19")))
+		v, err := p.Parse(lexer.NewState([]byte("42*23/3 + 90/15 - 17*19 ")))
 		if err != nil {
 			t.Fatalf("parse failed: %v", err)
 		}
@@ -70,38 +73,46 @@ func TestParser(t *testing.T) {
 	t.Run("reduce value error", func(t *testing.T) {
 		_, err := p.Parse(lexer.NewState([]byte("42/0-5")))
 		if !errors.Is(err, errDivZero) {
-			t.Error("no expected error", err)
+			t.Error("no expected error:", err)
 		}
 	})
-	// TODO: cannot trigger this error in this grammar without whitespace skipping
+	// REFACT: never happen: cannot trigger this error in this grammar without whitespace skipping
 	//t.Run("no reduce rule, unexpected token", func(t *testing.T) {
 	//	_, err := p.Parse(lexer.NewState([]byte("42/3**7")))
 	//	if !errors.Is(err, lexer.ErrParse) {
-	//		t.Fatal("wrong error type", err)
+	//		t.Fatal("wrong error type:", err)
 	//	}
 	//	if !strings.Contains(err.Error(), "unexpected input 1") {
-	//		t.Fatal("wrong error message", err)
+	//		t.Fatal("wrong error message:", err)
 	//	}
 	//})
 	t.Run("unexpected input 2, unexpected char", func(t *testing.T) {
 		_, err := p.Parse(lexer.NewState([]byte("42/3*?0")))
 		if !errors.Is(err, lexer.ErrParse) {
-			t.Fatal("wrong error type", err)
+			t.Fatal("wrong error type:", err)
 		}
-		if !strings.Contains(err.Error(), "unexpected input 2") {
-			t.Fatal("wrong error message", err)
+		if err.Error() != "unexpected input: expected int: parse error near ⟪42/3*⟫⏵⟪?0⟫" {
+			t.Fatal("wrong error message:", err)
 		}
 	})
 	t.Run("no reduce rule 3, unexpected token `A op > FAIL`", func(t *testing.T) {
 		_, err := p.Parse(lexer.NewState([]byte("42/3**7")))
 		if !errors.Is(err, lexer.ErrParse) {
-			t.Fatal("wrong error type", err)
+			t.Fatal("wrong error type:", err)
 		}
-		if !strings.Contains(err.Error(), "unexpected input 3") {
-			t.Fatal("wrong error message", err)
+		if err.Error() != "unexpected input: expected int: parse error near ⟪42/3*⟫⏵⟪*7⟫" {
+			t.Fatal("wrong error message:", err)
 		}
 	})
-	// TODO: cannot trigger "unexpected input instead of EOF" in this grammar
+	t.Run("no reduce rule, unexpected token", func(t *testing.T) {
+		_, err := p.Parse(lexer.NewState([]byte("42/3 7")))
+		if !errors.Is(err, lexer.ErrParse) {
+			t.Fatal("wrong error type:", err)
+		}
+		if !strings.Contains(err.Error(), "unexpected input instead of EOF: parse error near ⟪42/3⟫⏵⟪␠7⟫") {
+			t.Fatal("wrong error message:", err)
+		}
+	})
 }
 
 func matchDigits(state *lexer.State) (next *lexer.State, value any) {
@@ -122,3 +133,11 @@ func matchDigits(state *lexer.State) (next *lexer.State, value any) {
 }
 
 func isDigit(b byte) bool { return b >= '0' && b <= '9' }
+
+func matchWS(st *lexer.State) (next *lexer.State, v any) {
+	to, _ := st.TakeRunesFunc(unicode.IsSpace)
+	if to.Offset() == st.Offset() {
+		return nil, nil
+	}
+	return to, nil
+}

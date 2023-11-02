@@ -108,13 +108,20 @@ func New(terminals []lexer.Terminal, nonTerminals []NonTerminalDefinition) Gramm
 	}
 	if len(usedT) != len(terminals) {
 		msg := "following Terminals are not used in any Rule:\n"
+		bad := false
 		for _, t := range terminals {
+			if t.Id() < 0 {
+				continue
+			}
 			if _, ok := usedT[t.Id()]; ok {
 				continue
 			}
 			msg += "- " + symbol.Dump(t) + "\n"
+			bad = true
 		}
-		panic(errors.Wrap(symbol.ErrDefine, msg))
+		if bad {
+			panic(errors.Wrap(symbol.ErrDefine, msg))
+		}
 	}
 
 	return gr

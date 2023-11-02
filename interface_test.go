@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"unicode"
 
 	"github.com/pkg/errors"
 	lr0 "github.com/vovan-ve/go-lr0-parser"
@@ -35,6 +36,8 @@ var parser = lr0.New(
 		lr0.NewTerm(tDiv, `"/"`).Hide().Str("/"),
 		lr0.NewTerm(tParensOpen, `"("`).Hide().Str("("),
 		lr0.NewTerm(tParensClose, `")"`).Hide().Str(")"),
+
+		lr0.NewWhitespace().Func(matchWS),
 	},
 	[]lr0.NonTerminalDefinition{
 		lr0.NewNT(nGoal, "Goal").Main().Is(nSum),
@@ -65,10 +68,10 @@ func TestParser(t *testing.T) {
 		err    error
 	}
 	for i, c := range []testCase{
-		{input: "42*23/3+90/15-17*19", result: 42*23/3 + 90/15 - 17*19},
-		{input: "42*23/3+90/(15-17)*((19))", result: 42*23/3 + 90/(15-17)*19},
+		{input: "42*23/3 + 90/15 - 17*19 ", result: 42*23/3 + 90/15 - 17*19},
+		{input: "42*23/3 + 90/(15-17)*( (19 )) ", result: 42*23/3 + 90/(15-17)*19},
 
-		{input: "(2+3)/(3+8-12+1)", err: errDivZero},
+		{input: "(2 + 3) / (3 + 8 - 12 + 1)", err: errDivZero},
 		{input: "1+2(3", err: lr0.ErrParse},
 	} {
 		t.Run(fmt.Sprintf("case %d: %s", i, c.input), func(t *testing.T) {
@@ -101,3 +104,11 @@ func matchDigits(state *lr0.State) (next *lr0.State, value any) {
 }
 
 func isDigit(b byte) bool { return b >= '0' && b <= '9' }
+
+func matchWS(st *lr0.State) (next *lr0.State, v any) {
+	to, _ := st.TakeRunesFunc(unicode.IsSpace)
+	if to.Offset() == st.Offset() {
+		return nil, nil
+	}
+	return to, nil
+}

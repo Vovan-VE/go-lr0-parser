@@ -1,6 +1,8 @@
 package lexer
 
 import (
+	"io"
+
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
@@ -30,28 +32,37 @@ type Lexer interface {
 	// If none of expected Terminals matched, it will try to match first of the
 	// rest unexpected Terminals.
 	//
-	// At EOF or when nothing matched, a ErrParse wrapped error will be returned.
+	// At EOF the final eof State and io.EOF will be returned.
+	//
+	// When nothing matched, a ErrParse wrapped error will be returned.
 	Match(state *State, expected symbol.ReadonlySet) (next *State, m *Match, err error)
+	ExpectationError(expected symbol.ReadonlySet, pre string) error
 }
 
 type termMap = map[symbol.Id]Terminal
 
 type lexer struct {
-	list      []Terminal
-	terminals termMap
-	// TODO: whitespaces - ignore terminals on every match
+	list          []Terminal
+	terminals     termMap
+	internalTerms map[symbol.Id][]Terminal
 }
 
 // New creates a new empty Configurable
 func New(t ...Terminal) Lexer {
 	l := &lexer{
-		list:      make([]Terminal, 0, len(t)),
-		terminals: make(termMap),
+		list:          make([]Terminal, 0, len(t)),
+		terminals:     make(termMap),
+		internalTerms: make(map[symbol.Id][]Terminal),
 	}
 	for _, ti := range t {
 		id := ti.Id()
 		if id == symbol.InvalidId {
 			panic(errors.Wrap(symbol.ErrDefine, "zero id"))
+		}
+		if id < 0 {
+			prev, _ := l.internalTerms[id]
+			l.internalTerms[id] = append(prev, ti)
+			continue
 		}
 		if prev, exists := l.terminals[id]; exists {
 			if prev == ti {
@@ -91,35 +102,85 @@ func (l *lexer) GetTerminalIdsSet() symbol.Set {
 }
 
 func (l *lexer) Match(state *State, expected symbol.ReadonlySet) (*State, *Match, error) {
-	if !state.IsEOF() {
-		var (
-			altNext *State
-			altM    *Match
-		)
-		for _, t := range l.list {
-			nextS, v := t.Match(state)
-			if v != nil {
-				if err, ok := v.(error); ok {
-					return nil, nil, err
-				}
-			}
-			if nextS != nil {
-				m2 := &Match{
-					Term:  t.Id(),
-					Value: v,
-				}
-				if expected.Has(t.Id()) {
-					return nextS, m2, nil
-				} else if altNext == nil {
-					altNext = nextS
-					altM = m2
-				}
+	state = l.skipWhitespaces(state)
+	if state.IsEOF() {
+		return state, nil, io.EOF
+	}
+	var (
+		altNext *State
+		altM    *Match
+	)
+	for _, t := range l.list {
+		nextS, v := t.Match(state)
+		if v != nil {
+			if err, ok := v.(error); ok {
+				return nil, nil, err
 			}
 		}
-
-		if altNext != nil {
-			return altNext, altM, nil
+		if nextS != nil {
+			m2 := &Match{
+				Term:  t.Id(),
+				Value: v,
+			}
+			if expected.Has(t.Id()) {
+				return nextS, m2, nil
+			}
+			if altNext == nil {
+				altNext = nextS
+				altM = m2
+			}
 		}
 	}
-	return nil, nil, WithSource(expectationError(expected, l.list), state)
+	if altNext != nil {
+		return altNext, altM, nil
+	}
+
+	return nil, nil, WithSource(l.ExpectationError(expected, ""), state)
+}
+
+func (l *lexer) ExpectationError(expected symbol.ReadonlySet, pre string) error {
+	s := pre
+	if s != "" {
+		s += ": "
+	}
+	s += "expected "
+	i, last := 0, expected.Count()-1
+	for _, t := range l.list {
+		if !expected.Has(t.Id()) {
+			continue
+		}
+		if i > 0 {
+			if i < last {
+				s += ", "
+			} else {
+				s += " or "
+			}
+		}
+		i++
+		s += symbol.Dump(t)
+	}
+	return NewParseError(s)
+}
+
+func (l *lexer) skipWhitespaces(state *State) (next *State) {
+	next = state
+	wsList, ok := l.internalTerms[tWhitespace]
+	if !ok {
+		return
+	}
+WsType:
+	for !next.IsEOF() {
+		for _, ws := range wsList {
+			to, _ := ws.Match(next)
+			// is this ws type matched, move further and retry if we will
+			// find another ws type
+			if to != nil {
+				next = to
+				continue WsType
+			}
+		}
+		// no ws here, done
+		break
+	}
+	return
 }

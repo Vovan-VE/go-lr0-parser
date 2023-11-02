@@ -1,15 +1,16 @@
 package lexer
 
 import (
-	"fmt"
+	"io"
 	"testing"
+	"unicode"
 
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/internal/testutils"
 	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
-func TestLexer_Add(t *testing.T) {
+func TestLexer_New(t *testing.T) {
 	const (
 		tIdent symbol.Id = iota + 1
 		tPlus
@@ -30,9 +31,14 @@ func TestLexer_Add(t *testing.T) {
 		NewTerm(tIdent, "Identifier").Func(matchIdentifier),
 		NewTerm(tPlus, "Plus").Str("+"),
 		NewTerm(tMinus, "Minus").Str("-"),
+
+		NewWhitespace().Func(matchWS),
 	).(*lexer)
 	if len(l.terminals) != 3 {
 		t.Errorf("what just happened? %#v", l.terminals)
+	}
+	if len(l.internalTerms) != 1 {
+		t.Errorf("what just happened? %#v", l.internalTerms)
 	}
 
 	t.Run("panic", func(t *testing.T) {
@@ -58,9 +64,11 @@ func TestLexer_Match(t *testing.T) {
 		NewTerm(tInc, "Increment").Str("++"),
 		NewTerm(tPlus, "Plus").Str("+"),
 		NewTerm(tMinus, "Minus").Str("-"),
+
+		NewWhitespace().Func(matchWS),
 	)
 
-	start := NewState([]byte("38+23-19++"))
+	start := NewState([]byte("38+23 - \n 19++"))
 
 	a, m, err := l.Match(start, symbol.NewSetOfId(tInt))
 	if err != nil {
@@ -105,7 +113,7 @@ func TestLexer_Match(t *testing.T) {
 	if v, ok := m.Value.(string); m.Term != tMinus || !ok || v != "-" {
 		t.Fatalf("d: match wrong: %+v", m)
 	}
-	if d.Offset() != 6 {
+	if d.Offset() != 7 {
 		t.Fatal("d: offset", d.Offset())
 	}
 
@@ -116,7 +124,7 @@ func TestLexer_Match(t *testing.T) {
 	if v, ok := m.Value.(string); m.Term != tInt || !ok || v != "19" {
 		t.Fatalf("e: match wrong: %+v", m)
 	}
-	if e.Offset() != 8 {
+	if e.Offset() != 12 {
 		t.Fatal("e: offset", e.Offset())
 	}
 
@@ -128,7 +136,7 @@ func TestLexer_Match(t *testing.T) {
 	if v, ok := m.Value.(string); m.Term != tInc || !ok || v != "++" {
 		t.Fatalf("f1: match wrong: %+v", m)
 	}
-	if f1.Offset() != 10 {
+	if f1.Offset() != 14 {
 		t.Fatal("f1: offset", f1.Offset())
 	}
 
@@ -140,7 +148,7 @@ func TestLexer_Match(t *testing.T) {
 	if v, ok := m.Value.(string); m.Term != tInc || !ok || v != "++" {
 		t.Fatalf("f2: match wrong: %+v", m)
 	}
-	if f2.Offset() != 10 {
+	if f2.Offset() != 14 {
 		t.Fatal("f2: offset", f2.Offset())
 	}
 
@@ -152,26 +160,34 @@ func TestLexer_Match(t *testing.T) {
 	if v, ok := m.Value.(string); m.Term != tInc || !ok || v != "++" {
 		t.Fatalf("f3: match wrong: %+v", m)
 	}
-	if f3.Offset() != 10 {
+	if f3.Offset() != 14 {
 		t.Fatal("f3: offset", f3.Offset())
 	}
 
 	// EOF
 	_, _, err = l.Match(start.to(9000), symbol.NewSetOfId(tInt, tPlus, tMinus, tInc))
-	if !errors.Is(err, ErrParse) {
+	if !errors.Is(err, io.EOF) {
 		t.Fatal("eof: wrong error", err)
 	}
-	const (
-		expectEofStr     = `expected Int, Increment, Plus or Minus: parse error near ⟪38+23-19++⟫⏵<EOF>`
-		expectEofStrPlus = `expected Int, Increment, Plus or Minus: parse error near:
-38+23-19++<EOF>
-----------^
-`
-	)
-	if fmt.Sprintf("%v", err) != expectEofStr {
-		t.Errorf("err: <<<<%s>>>>", err)
+	//	const (
+	//		expectEofStr     = `expected Int, Increment, Plus or Minus: parse error near ⟪38+23␠-␠␊␠19++⟫⏵<EOF>`
+	//		expectEofStrPlus = `expected Int, Increment, Plus or Minus: parse error near:
+	//38+23␠-␠␊␠19++<EOF>
+	//--------------^
+	//`
+	//	)
+	//	if fmt.Sprintf("%v", err) != expectEofStr {
+	//		t.Errorf("err: <<<<%s>>>>", err)
+	//	}
+	//	if fmt.Sprintf("%+v", err) != expectEofStrPlus {
+	//		t.Errorf("err+ wrong: <<<<%+v>>>>", err)
+	//	}
+}
+
+func matchWS(st *State) (next *State, v any) {
+	to, _ := st.TakeRunesFunc(unicode.IsSpace)
+	if to.Offset() == st.Offset() {
+		return nil, nil
 	}
-	if fmt.Sprintf("%+v", err) != expectEofStrPlus {
-		t.Errorf("err+ wrong: <<<<%+v>>>>", err)
-	}
+	return to, nil
 }

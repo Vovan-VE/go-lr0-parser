@@ -42,7 +42,7 @@ func WithSource(err error, s *State) error {
 	}
 }
 
-func expectationError(expected symbol.ReadonlySet, terminals []Terminal) error {
+func ExpectationError(expected symbol.ReadonlySet, terminals []Terminal) error {
 	s := "expected "
 	i, last := 0, expected.Count()-1
 	for _, t := range terminals {

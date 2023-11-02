@@ -98,6 +98,16 @@ func New(terminals []Terminal, rules []NonTerminalDefinition) Parser {
 //	NewTerm(tPlus, "plus").Hide().Byte('+')
 func NewTerm(id Id, name string) *TerminalFactory { return lexer.NewTerm(id, name) }
 
+// NewWhitespace can be used to define internal terminals to skip whitespaces
+//
+// Can be used multiple times to define different kinds of whitespaces.
+//
+// Whitespace tokens will be silently skipped before every terminal match
+//
+//	NewWhitespace().Func(matchSpaces),
+//	NewWhitespace().Func(matchComment),
+func NewWhitespace() *TerminalFactory { return lexer.NewWhitespace() }
+
 // NewNT created new non-terminal definition
 //
 //	NewNT(nGoal, "Goal").Main().

@@ -6,7 +6,8 @@ import (
 
 // Id is an identifier for terminals and non-terminals
 //
-// Zero value must not be used:
+// Only positive values must be used. Zero value is `InvalidId` and negative
+// values are reserved.
 //
 //	const (
 //		TInt symbol.Id = iota + 1
