@@ -1,5 +1,7 @@
 # LR(0) Parser
 
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/vovan-ve/go-lr0-parser)
+![GitHub release](https://img.shields.io/github/v/release/vovan-ve/go-lr0-parser)
 [![License](https://img.shields.io/github/license/vovan-ve/go-lr0-parser)](./LICENSE)
 
 This package contains [LR(0) parser][lr-parser.wiki] to parse text according
