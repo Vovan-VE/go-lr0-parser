@@ -28,11 +28,22 @@ type Symbol interface {
 	Name() string
 }
 
-func Dump(m Symbol) string {
-	if s := m.Name(); s != "" {
+type Registry interface {
+	SymbolName(id Id) string
+}
+
+func Dump(s Symbol) string {
+	if n := s.Name(); n != "" {
+		return n
+	}
+	return fmt.Sprintf("#%v", s.Id())
+}
+
+func DumpId(id Id, r Registry) string {
+	if s := r.SymbolName(id); s != "" {
 		return s
 	}
-	return fmt.Sprintf("#%v", m.Id())
+	return fmt.Sprintf("#%v", id)
 }
 
 type ReadonlySet interface {

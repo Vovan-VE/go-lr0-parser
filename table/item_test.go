@@ -98,9 +98,3 @@ func TestItem_Navigate(t *testing.T) {
 }
 
 func calcStub3(any, any, any) (any, error) { return nil, nil }
-
-var stubHidden lexer.HiddenRegistry = &_stubHidden{}
-
-type _stubHidden struct{}
-
-func (_ *_stubHidden) IsHidden(symbol.Id) bool { return false }

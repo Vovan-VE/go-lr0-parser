@@ -2,6 +2,8 @@ package table
 
 import (
 	"testing"
+
+	"github.com/vovan-ve/go-lr0-parser/symbol"
 )
 
 func TestNew(t *testing.T) {
@@ -196,7 +198,7 @@ func TestNew(t *testing.T) {
 		t.Error("rowSumMinusVal reduce rule wrong")
 	}
 
-	if d := tbl.dump(); d != expectTableDump {
+	if d := tbl.dump(testGrammar.(symbol.Registry)); d != expectTableDump {
 		t.Error("table dump is:\n", d)
 	}
 }
@@ -205,65 +207,65 @@ const expectTableDump = `====[ table ]====
 row 0 ---------
 	EOF: ACCEPT
 	terminals:
-		#1 -> 1
-		#2 -> 2
+		zero -> 1
+		one -> 2
 	goto:
-		#5 -> 3
-		#6 -> 4
+		Val -> 3
+		Sum -> 4
 	rule: -
 row 1 ---------
 	EOF: ACCEPT
 	terminals: -
 	goto: -
 	rule:
-		#5 : #1
+		Val : zero
 row 2 ---------
 	EOF: ACCEPT
 	terminals: -
 	goto: -
 	rule:
-		#5 : #2
+		Val : one
 row 3 ---------
 	EOF: ACCEPT
 	terminals: -
 	goto: -
 	rule:
-		#6 : #5
+		Sum : Val
 row 4 ---------
 	EOF: -
 	terminals:
-		#3 -> 5
-		#4 -> 6
+		"+" -> 5
+		"-" -> 6
 	goto: -
 	rule:
-		#7 : #6 $
+		Goal : Sum $
 row 5 ---------
 	EOF: ACCEPT
 	terminals:
-		#1 -> 1
-		#2 -> 2
+		zero -> 1
+		one -> 2
 	goto:
-		#5 -> 7
+		Val -> 7
 	rule: -
 row 6 ---------
 	EOF: ACCEPT
 	terminals:
-		#1 -> 1
-		#2 -> 2
+		zero -> 1
+		one -> 2
 	goto:
-		#5 -> 8
+		Val -> 8
 	rule: -
 row 7 ---------
 	EOF: ACCEPT
 	terminals: -
 	goto: -
 	rule:
-		#6 : #6 #3 #5
+		Sum : Sum "+" Val
 row 8 ---------
 	EOF: ACCEPT
 	terminals: -
 	goto: -
 	rule:
-		#6 : #6 #4 #5
+		Sum : Sum "-" Val
 =================
 `

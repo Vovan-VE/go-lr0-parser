@@ -11,7 +11,8 @@ import (
 // Grammar defines full grammar how to parse an input stream
 type Grammar interface {
 	lexer.Lexer
-	RuleImpl(index int) Rule
+	RulesCount() int
+	Rule(index int) Rule
 	// MainRule returns main rule, the one with EOF flag
 	MainRule() Rule
 	// RulesFor returns set of rules for the given subject
@@ -33,14 +34,20 @@ func New(terminals []lexer.Terminal, nonTerminals []NonTerminalDefinition) Gramm
 	var (
 		l           = lexer.New(terminals...)
 		nonTerm     = make(map[symbol.Id]symbol.Symbol)
-		rulesImpl   = make([]Rule, 0)
 		mainS       symbol.Symbol
-		mainI       = -1
 		ruleIndex   int
 		si          = make(map[symbol.Id][]int)
 		furtherNTAt = make(map[symbol.Id]string)
 		usedT       = make(map[symbol.Id]struct{})
 	)
+
+	gr := &grammar{
+		Lexer:           l,
+		nonTerm:         nonTerm,
+		rules:           make([]Rule, 0),
+		mainIndex:       -1,
+		subjectsIndices: si,
+	}
 
 	for _, ntDef := range nonTerminals {
 		subjId := ntDef.Id()
@@ -54,19 +61,19 @@ func New(terminals []lexer.Terminal, nonTerminals []NonTerminalDefinition) Gramm
 			panic(errors.Wrapf(symbol.ErrDefine, "Non-Terminal %s is Terminal", symbol.Dump(ntDef)))
 		}
 
-		for ri, r := range ntDef.GetRules(l) {
+		for ri, r := range ntDef.GetRules(gr) {
 			if r.HasEOF() {
 				if mainS != nil {
 					panic(errors.Wrapf(symbol.ErrDefine, "another rule %s has Main flag too, previous was %s", symbol.Dump(ntDef), symbol.Dump(mainS)))
 				}
 				mainS = ntDef
-				mainI = ruleIndex
+				gr.mainIndex = ruleIndex
 			}
 
 			si[subjId] = append(si[subjId], ruleIndex)
 			// now this non-terminal is defined
 
-			rulesImpl = append(rulesImpl, r)
+			gr.rules = append(gr.rules, r)
 			ruleIndex++
 
 			for i, id := range r.Definition() {
@@ -84,8 +91,7 @@ func New(terminals []lexer.Terminal, nonTerminals []NonTerminalDefinition) Gramm
 					continue
 				}
 				// seeing this non-terminal first time
-				// TODO: Rule to string
-				furtherNTAt[id] = fmt.Sprintf("#%d in NT %s rules[%d] definitions[%d]", id, symbol.Dump(ntDef), ri, i)
+				furtherNTAt[id] = fmt.Sprintf("#%d in NT %s rules[%d] (%s) definitions[%d]", id, symbol.Dump(ntDef), ri, r, i)
 			}
 		}
 	}
@@ -97,7 +103,7 @@ func New(terminals []lexer.Terminal, nonTerminals []NonTerminalDefinition) Gramm
 		}
 		panic(errors.Wrap(symbol.ErrDefine, msg))
 	}
-	if mainI == -1 {
+	if gr.mainIndex == -1 {
 		panic(errors.Wrap(symbol.ErrDefine, "no main rule with EOF flag"))
 	}
 	if len(usedT) != len(terminals) {
@@ -111,13 +117,7 @@ func New(terminals []lexer.Terminal, nonTerminals []NonTerminalDefinition) Gramm
 		panic(errors.Wrap(symbol.ErrDefine, msg))
 	}
 
-	return &grammar{
-		Lexer:           l,
-		nonTerm:         nonTerm,
-		rules:           rulesImpl,
-		mainIndex:       mainI,
-		subjectsIndices: si,
-	}
+	return gr
 }
 
 type grammar struct {
@@ -128,7 +128,18 @@ type grammar struct {
 	subjectsIndices map[symbol.Id][]int
 }
 
-func (g *grammar) RuleImpl(index int) Rule { return g.rules[index] }
+func (g *grammar) SymbolName(id symbol.Id) string {
+	if n := g.Lexer.SymbolName(id); n != "" {
+		return n
+	}
+	if s, ok := g.nonTerm[id]; ok {
+		return s.Name()
+	}
+	return ""
+}
+
+func (g *grammar) RulesCount() int     { return len(g.rules) }
+func (g *grammar) Rule(index int) Rule { return g.rules[index] }
 
 func (g *grammar) MainRule() Rule {
 	return g.rules[g.mainIndex]
@@ -138,8 +149,7 @@ func (g *grammar) RulesFor(id symbol.Id) []Rule {
 	indices, ok := g.subjectsIndices[id]
 	if !ok {
 		if g.IsTerminal(id) {
-			// TODO: terminal name
-			panic(errors.Wrapf(symbol.ErrDefine, "no rule - #%d is Terminal", id))
+			panic(errors.Wrapf(symbol.ErrDefine, "no rule - %s is Terminal", symbol.DumpId(id, g)))
 		}
 		panic(errors.Wrapf(symbol.ErrDefine, "no rule for #%d", id))
 	}

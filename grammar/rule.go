@@ -21,7 +21,7 @@ type Rule interface {
 	IsHidden(index int) bool
 }
 
-func newRule(s symbol.Symbol, main bool, d nonTerminalDefinition, l lexer.HiddenRegistry) *rule {
+func newRule(s symbol.Symbol, main bool, d nonTerminalDefinition, l lexer.NamedHiddenRegistry) *rule {
 	defer func() {
 		e := recover()
 		if e == nil {
@@ -41,6 +41,7 @@ func newRule(s symbol.Symbol, main bool, d nonTerminalDefinition, l lexer.Hidden
 		definition: d.items,
 		calc:       prepareHandler(d.calcHandler, len(d.items)-len(hidden)),
 		hidden:     hidden,
+		nameReg:    l,
 	}
 }
 
@@ -50,17 +51,17 @@ type rule struct {
 	definition []symbol.Id
 	calc       calcFunc
 	hidden     map[int]struct{}
+	nameReg    symbol.Registry
 }
 
 func (r *rule) Subject() symbol.Id      { return r.subject }
 func (r *rule) HasEOF() bool            { return r.eof }
 func (r *rule) Definition() []symbol.Id { return r.definition }
 
-// REFACT: names from grammar
 func (r *rule) String() string {
-	s := fmt.Sprintf("#%d :", r.subject)
+	s := symbol.DumpId(r.subject, r.nameReg) + " :"
 	for _, id := range r.definition {
-		s += fmt.Sprintf(" #%d", id)
+		s += " " + symbol.DumpId(id, r.nameReg)
 	}
 	if r.eof {
 		s += " $"

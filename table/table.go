@@ -98,11 +98,11 @@ type table struct {
 
 func (t *table) Row(idx StateIndex) Row { return t.rows[idx] }
 
-func (t *table) dump() string {
+func (t *table) dump(reg symbol.Registry) string {
 	res := "====[ table ]====\n"
 	for i, r := range t.rows {
 		res += fmt.Sprintf("row %v ---------\n", i)
-		res += r.dump("\t")
+		res += r.dump("\t", reg)
 	}
 	res += "=================\n"
 	return res

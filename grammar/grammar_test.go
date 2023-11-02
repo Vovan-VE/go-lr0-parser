@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 		defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
 			const (
 				expected = `undefined non-terminals without rules:
-- #100 in NT Sum rules[0] definitions[0]
+- #100 in NT Sum rules[0] (Sum : #100) definitions[0]
 : invalid definition`
 			)
 			if err.Error() != expected {
@@ -136,6 +136,23 @@ func TestNew(t *testing.T) {
 		NewNT(nGoal, "Goal").Main().Is(nSum),
 	})
 
+	t.Run("symbol.Registry", func(t *testing.T) {
+		var reg symbol.Registry = g
+		if s := reg.SymbolName(tInt); s != "integer" {
+			t.Error("name of tInt: ", s)
+		}
+		if s := reg.SymbolName(nSum); s != "Sum" {
+			t.Error("name of nSum: ", s)
+		}
+
+		if s := symbol.DumpId(tInt, g); s != "integer" {
+			t.Error("name of tInt: ", s)
+		}
+		if s := symbol.DumpId(nSum, g); s != "Sum" {
+			t.Error("name of nSum: ", s)
+		}
+	})
+
 	t.Run("main rule", func(t *testing.T) {
 		mr := g.MainRule()
 		if mr == nil {
@@ -165,7 +182,7 @@ func TestNew(t *testing.T) {
 
 		t.Run("panic: for terminal", func(t *testing.T) {
 			defer testutils.ExpectPanicError(t, symbol.ErrDefine, func(t *testing.T, err error) {
-				if err.Error() != "no rule - #1 is Terminal: invalid definition" {
+				if err.Error() != "no rule - integer is Terminal: invalid definition" {
 					t.Fatal("wrong error message:", err)
 				}
 			})

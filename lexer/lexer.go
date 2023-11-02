@@ -10,9 +10,14 @@ type HiddenRegistry interface {
 	IsHidden(id symbol.Id) bool
 }
 
+type NamedHiddenRegistry interface {
+	symbol.Registry
+	HiddenRegistry
+}
+
 // Lexer does search predefined Terminals in an input stream.
 type Lexer interface {
-	HiddenRegistry
+	NamedHiddenRegistry
 	// IsTerminal returns true if the given Id is one of defined Terminal
 	IsTerminal(id symbol.Id) bool
 	// GetTerminalIdsSet returns new set of all defined Id
@@ -58,6 +63,13 @@ func New(t ...Terminal) Lexer {
 		l.terminals[id] = ti
 	}
 	return l
+}
+
+func (l *lexer) SymbolName(id symbol.Id) string {
+	if s, ok := l.terminals[id]; ok {
+		return s.Name()
+	}
+	return ""
 }
 
 func (l *lexer) IsTerminal(id symbol.Id) bool {

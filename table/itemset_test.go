@@ -40,12 +40,12 @@ var testGrammar = grammar.New(
 	},
 )
 var (
-	testRuleImplGoal     = testGrammar.RuleImpl(0)
-	testRuleImplSumPlus  = testGrammar.RuleImpl(1)
-	testRuleImplSumMinus = testGrammar.RuleImpl(2)
-	testRuleImplSumVal   = testGrammar.RuleImpl(3)
-	testRuleImplValZero  = testGrammar.RuleImpl(4)
-	testRuleImplValOne   = testGrammar.RuleImpl(5)
+	testRuleImplGoal     = testGrammar.Rule(0)
+	testRuleImplSumPlus  = testGrammar.Rule(1)
+	testRuleImplSumMinus = testGrammar.Rule(2)
+	testRuleImplSumVal   = testGrammar.Rule(3)
+	testRuleImplValZero  = testGrammar.Rule(4)
+	testRuleImplValOne   = testGrammar.Rule(5)
 )
 
 func TestGetAllPossibleItems(t *testing.T) {

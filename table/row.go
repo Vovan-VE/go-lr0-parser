@@ -37,11 +37,10 @@ func newRow() *row {
 
 type stateActions map[symbol.Id]StateIndex
 
-// TODO: names from grammar
-func (s stateActions) dump(indent string) string {
+func (s stateActions) dump(indent string, r symbol.Registry) string {
 	res := ""
 	for _, p := range helpers.MapSortedInt(s) {
-		res += indent + fmt.Sprintf("#%v -> %v\n", p.K, p.V)
+		res += indent + fmt.Sprintf("%s -> %v\n", symbol.DumpId(p.K, r), p.V)
 	}
 	return res
 }
@@ -98,8 +97,7 @@ func (r *row) IsReduceOnly() bool {
 		r.reduceRule != nil
 }
 
-// TODO: names from grammar
-func (r *row) dump(indent string) string {
+func (r *row) dump(indent string, reg symbol.Registry) string {
 	res := indent + "EOF: "
 	if r.acceptEof {
 		res += "-"
@@ -109,28 +107,21 @@ func (r *row) dump(indent string) string {
 
 	res += "\n" + indent + "terminals:"
 	if len(r.terminals) != 0 {
-		res += "\n" + r.terminals.dump(indent+"\t")
+		res += "\n" + r.terminals.dump(indent+"\t", reg)
 	} else {
 		res += " -\n"
 	}
 
 	res += indent + "goto:"
 	if len(r.gotos) != 0 {
-		res += "\n" + r.gotos.dump(indent+"\t")
+		res += "\n" + r.gotos.dump(indent+"\t", reg)
 	} else {
 		res += " -\n"
 	}
 
 	res += indent + "rule:"
 	if r.reduceRule != nil {
-		res += "\n" + indent + fmt.Sprintf("\t#%v :", r.reduceRule.Subject())
-		for _, id := range r.reduceRule.Definition() {
-			res += fmt.Sprintf(" #%v", id)
-		}
-		if r.reduceRule.HasEOF() {
-			res += " $"
-		}
-		res += "\n"
+		res += "\n" + indent + "\t" + r.ReduceRule().String() + "\n"
 	} else {
 		res += " -\n"
 	}

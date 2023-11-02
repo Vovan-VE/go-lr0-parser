@@ -8,7 +8,7 @@ import (
 
 type NonTerminalDefinition interface {
 	symbol.Symbol
-	GetRules(l lexer.HiddenRegistry) []Rule
+	GetRules(l lexer.NamedHiddenRegistry) []Rule
 }
 
 type NonTerminal struct {
@@ -97,7 +97,7 @@ func (n *NonTerminal) Do(calcHandler any) *NonTerminal {
 }
 
 // GetRules return actual rules built for this non-terminal
-func (n *NonTerminal) GetRules(l lexer.HiddenRegistry) []Rule {
+func (n *NonTerminal) GetRules(l lexer.NamedHiddenRegistry) []Rule {
 	c := len(n.definitions)
 	if c == 0 {
 		panic(errors.Wrap(symbol.ErrDefine, "no definitions by Is()"))
