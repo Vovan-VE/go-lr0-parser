@@ -1,16 +1,3 @@
-# LR(0) Parser
-
-[![License](https://img.shields.io/github/license/vovan-ve/go-lr0-parser)](./LICENSE)
-
-This package contains [LR(0) parser][lr-parser.wiki] to parse text according
-to defined LR(0) grammar.
-
-It's based on my previous [PHP library](https://github.com/Vovan-VE/parser),
-but with some package API enhancements.
-
-## Example
-
-```go
 package main
 
 import (
@@ -39,12 +26,15 @@ var parser = lr0.New(
 		lr0.NewTerm(tMinus, `"-"`).Hide().Str("-"),
 	},
 	[]lr0.NonTerminalDefinition{
-		lr0.NewNT(nGoal, "Goal").Main().Is(nSum),
+		lr0.NewNT(nGoal, "Goal").
+			Main().
+			Is(nSum),
 		lr0.NewNT(nSum, "Sum").
 			Is(nSum, tPlus, nVal).Do(func(a, b int) int { return a + b }).
 			Is(nSum, tMinus, nVal).Do(func(a, b int) int { return a - b }).
 			Is(nVal),
-		lr0.NewNT(nVal, "Val").Is(tInt),
+		lr0.NewNT(nVal, "Val").
+			Is(tInt),
 	},
 )
 
@@ -70,6 +60,7 @@ func matchDigits(state *lr0.State) (next *lr0.State, value any) {
 		return
 	}
 	next = st
+
 	value, err := strconv.Atoi(string(state.BytesTo(next)))
 	if err != nil {
 		value = err
@@ -78,28 +69,3 @@ func matchDigits(state *lr0.State) (next *lr0.State, value any) {
 }
 
 func isDigit(b byte) bool { return b >= '0' && b <= '9' }
-```
-
-```sh
-$ go build -o calc examples/01-calc-tiny/main.go
-...
-$ ./calc "3+8-5" "3+ 8-5" "3+8*5"
-0> 3+8-5        => 6
-1> 3+ 8-5       => Error: unexpected input: expected int: parse error near ⟪3+⟫⏵⟪␠8-5⟫
-2> 3+8*5        => Error: unexpected input: expected "+" or "-": parse error near ⟪3+8⟫⏵⟪*5⟫
-```
-
-See examples in [examples/](./examples/) and [tests](./lr0_test.go).
-
-Theory
-------
-
-[LR parser][lr-parser.wiki].
-
-License
--------
-
-[MIT][mit]
-
-[lr-parser.wiki]: https://en.wikipedia.org/wiki/LR_parser
-[mit]: https://opensource.org/licenses/MIT
