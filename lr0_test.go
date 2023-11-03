@@ -110,6 +110,30 @@ func matchWS(st *lr0.State) (next *lr0.State, v any) {
 	return to, nil
 }
 
+func TestInvalidId(t *testing.T) {
+	defer func() {
+		e := recover()
+		err, ok := e.(error)
+		if !ok {
+			panic(e)
+		}
+		if !errors.Is(err, lr0.ErrDefine) {
+			t.Fatal("another error:", err)
+		}
+		if err.Error() != "zero id: invalid definition" {
+			t.Error("wrong error message:", err)
+		}
+	}()
+
+	lr0.New(
+		[]lr0.Terminal{
+			lr0.NewTerm(tPlus, `"+"`).Str("+"),
+			lr0.NewTerm(lr0.InvalidId, `"-"`).Str("-"),
+		},
+		[]lr0.NonTerminalDefinition{},
+	)
+}
+
 func TestCommentExample1(t *testing.T) {
 	p := lr0.New(
 		[]lr0.Terminal{

@@ -33,11 +33,16 @@ func NewParseError(msg string) error {
 //	}
 //}
 
+type StatePrinter interface {
+	String() string
+	Format(s fmt.State, verb rune)
+}
+
 // WithSource wraps the given error to append State info to error message
-func WithSource(err error, s *State) error {
+func WithSource(err error, state StatePrinter) error {
 	return &withSource{
 		error: err,
-		src:   s,
+		src:   state,
 	}
 }
 
@@ -61,7 +66,7 @@ func (p *parseError) Format(s fmt.State, verb rune) {
 
 type withSource struct {
 	error
-	src *State
+	src StatePrinter
 }
 
 func (w *withSource) Error() string {
