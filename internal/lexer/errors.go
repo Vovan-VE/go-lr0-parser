@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/vovan-ve/go-lr0-parser/internal/symbol"
 )
 
 var (
@@ -40,26 +39,6 @@ func WithSource(err error, s *State) error {
 		error: err,
 		src:   s,
 	}
-}
-
-func ExpectationError(expected symbol.ReadonlySet, terminals []Terminal) error {
-	s := "expected "
-	i, last := 0, expected.Count()-1
-	for _, t := range terminals {
-		if !expected.Has(t.Id()) {
-			continue
-		}
-		if i > 0 {
-			if i < last {
-				s += ", "
-			} else {
-				s += " or "
-			}
-		}
-		i++
-		s += symbol.Dump(t)
-	}
-	return NewParseError(s)
 }
 
 type parseError struct {
