@@ -14,6 +14,7 @@ var (
 	metaWS = term{id: tWhitespace, name: "whitespace"}
 )
 
+// TerminalFactory is a helper API to define a Terminal
 type TerminalFactory struct {
 	term
 	//Hide() TerminalFactory
@@ -36,6 +37,8 @@ func NewTerm(id Id, name string) *TerminalFactory {
 // Can be used multiple times to define different kinds of whitespaces.
 //
 // Whitespace tokens will be silently skipped before every terminal match
+//
+//	NewWhitespace().FuncRune(unicode.IsSpace)
 func NewWhitespace() *TerminalFactory {
 	return &TerminalFactory{
 		term: metaWS,
@@ -70,6 +73,8 @@ func (t *TerminalFactory) Byte(b byte, more ...byte) Terminal {
 // Bytes creates a Terminal to match the given sequence of bytes exactly.
 //
 // On match the returned value is matched bytes
+//
+//	NewTerm(tCRLF, "CRLF").Byte('\r', '\n')
 func (t *TerminalFactory) Bytes(b []byte) Terminal {
 	if len(b) == 0 {
 		panic(errors.Wrap(ErrDefine, "empty bytes slice"))

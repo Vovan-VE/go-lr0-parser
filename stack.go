@@ -47,12 +47,12 @@ func (s *stack) Shift(si tableStateIndex, id Id, value any) {
 }
 
 func (s *stack) Reduce() (bool, error) {
-	rule := s.row.ReduceRule()
-	if rule == nil {
+	r := s.row.ReduceRule()
+	if r == nil {
 		return false, nil
 	}
 
-	reduceCount := len(rule.Definition())
+	reduceCount := len(r.Definition())
 	totalCount := len(s.items)
 	if totalCount < reduceCount {
 		panic(errors.Wrap(ErrInternal, "not enough items in stack"))
@@ -60,16 +60,16 @@ func (s *stack) Reduce() (bool, error) {
 	nextCount := totalCount - reduceCount
 
 	values := make([]any, 0, reduceCount)
-	def := rule.Definition()
+	def := r.Definition()
 	for i, it := range s.items[nextCount:] {
 		if it.node != def[i] {
 			panic(errors.Wrap(ErrInternal, "unexpected stack content"))
 		}
-		if !rule.IsHidden(i) {
+		if !r.IsHidden(i) {
 			values = append(values, it.value)
 		}
 	}
-	newValue, err := rule.Value(values)
+	newValue, err := r.Value(values)
 	if err != nil {
 		return false, err
 	}
@@ -80,7 +80,7 @@ func (s *stack) Reduce() (bool, error) {
 	}
 	baseRow := s.t.Row(baseSI)
 
-	newId := rule.Subject()
+	newId := r.Subject()
 	newSI, ok := baseRow.GotoAction(newId)
 	if !ok {
 		panic(errors.Wrap(ErrInternal, "unexpected state in gotos"))

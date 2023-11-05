@@ -11,18 +11,18 @@ import (
 
 const stateFormatContext = 30
 
-// State describes an immutable state of reading the underlying buffer at the
-// given position
-type State struct {
-	source []byte
-	at     int
-}
-
 // NewState creates new State for the given buffer `input` pointing to its start
 func NewState(input []byte) *State {
 	return &State{
 		source: input,
 	}
+}
+
+// State describes an immutable state of reading the underlying buffer at the
+// given position
+type State struct {
+	source []byte
+	at     int
 }
 
 // to returns new State for the same buffer pointing to the given position `pos`

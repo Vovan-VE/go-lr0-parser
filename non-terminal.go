@@ -4,13 +4,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type NonTerminal struct {
-	id          Id
-	name        string
-	main        bool
-	definitions []nonTerminalDefinition
-}
-
 // NewNT created new non-terminal definition
 //
 //	NewNT(nGoal, "Goal").Main().
@@ -28,6 +21,17 @@ func NewNT(id Id, name string) *NonTerminal {
 	return &NonTerminal{id: id, name: name}
 }
 
+var _ NonTerminalDefinition = (*NonTerminal)(nil)
+
+// NonTerminal is NonTerminalDefinition implementation with chainable definition
+// API
+type NonTerminal struct {
+	id          Id
+	name        string
+	main        bool
+	definitions []nonTerminalDefinition
+}
+
 func (n *NonTerminal) Id() Id { return n.id }
 
 func (n *NonTerminal) Name() string { return n.name }
@@ -36,6 +40,8 @@ func (n *NonTerminal) Name() string { return n.name }
 //
 // Main non-terminal must have exactly one definition. Exactly one main rule
 // must be defined in grammar.
+//
+//	NewNT(nGoal).Main().Is(nSum)
 func (n *NonTerminal) Main() *NonTerminal {
 	if l := len(n.definitions); l > 1 {
 		panic(errors.Wrapf(ErrDefine, "main non-terminal must have the only definition, here are %d", l))
@@ -46,7 +52,7 @@ func (n *NonTerminal) Main() *NonTerminal {
 
 // Is adds one more alternative definition for the non-terminal
 //
-// Is can be followed by `Do()` to define evaluation for this definition.
+// Is can be followed by Do() to define evaluation for this definition.
 func (n *NonTerminal) Is(id Id, ids ...Id) *NonTerminal {
 	if n.main && len(n.definitions) > 0 {
 		panic(errors.Wrap(ErrDefine, "main non-terminal must have the only definition"))
@@ -65,7 +71,7 @@ func (n *NonTerminal) Is(id Id, ids ...Id) *NonTerminal {
 //
 //	[]any{ /* one value here */ }
 //
-// then `Do()` subsequent can be omitted. In this case the value of children
+// then `Do()` subsequent can be omitted: then the value of children
 // node will be returned from this rule:
 //
 //	NewNT(nSum, "Sum").

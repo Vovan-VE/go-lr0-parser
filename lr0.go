@@ -63,14 +63,15 @@ type Symbol interface {
 }
 
 type SymbolRegistry interface {
+	// SymbolName returns the Name of the Symbol with the given Id
 	SymbolName(id Id) string
 }
 
-// MatchFunc is a signature for common function to match an underlying token.
+// MatchFunc is a signature for common function to match an underlying Terminal.
 //
 // It accepts current State to parse from.
 //
-// If the token parsed, the function returns next State to continue from and
+// If the Terminal parsed, the function returns next State to continue from and
 // evaluated token value.
 //
 // If the token was not parsed, the function returns `nil, nil`.
@@ -97,24 +98,37 @@ type Terminal interface {
 // NonTerminalDefinition is an interface to make Rules for non-terminal
 type NonTerminalDefinition interface {
 	Symbol
+	// GetRules returns slice of Rule describing how the non-terminal can be
+	// parsed from parts
 	GetRules(l NamedHiddenRegistry) []Rule
 }
 
 type NamedHiddenRegistry interface {
 	SymbolRegistry
+	// IsHidden returns `true` if the Symbol with the given Id is hidden
 	IsHidden(id Id) bool
 }
 
 // Rule is one of possible definition for a non-Terminal
 type Rule interface {
 	fmt.Stringer
-	// Subject of the rule
+	// Subject of the rule, what the Rule describes
 	Subject() Id
 	// HasEOF tells whether EOF must be found in the end of input
+	//
+	// The Rule with EOF flag is Main Rule. A grammar must have exactly one Main
+	// Rule.
 	HasEOF() bool
 	// Definition of what it consists of
 	Definition() []Id
+	// Value evaluates the value of this non-terminal from the given values of
+	// its Definition items. Notice, hidden items don't produce values
+	//
+	// If `error` will be returned, the whole parsing will be stopped with this
+	// error wrapped
 	Value([]any) (any, error)
+	// IsHidden returns `true` for hidden symbols from Definition referring by
+	// index in Definition
 	IsHidden(index int) bool
 }
 
@@ -135,9 +149,9 @@ type Parser interface {
 //
 //	parser := New(
 //		[]Terminal{
-//			NewTerm(tInt, "int").Func(matchInt),
+//			NewTerm(tInt, "int").FuncByte(isDigit, bytesToInt),
 //			NewTerm(tPlus, `"+"`).Hide().Str("+"),
-//			NewWhitespace().Func(matchSpaces),
+//			NewWhitespace().FuncRune(unicode.IsSpace),
 //		},
 //		[]NonTerminalDefinition{
 //			NewNT(nGoal, "Goal").Main().Is(nSum),
