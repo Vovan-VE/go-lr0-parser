@@ -127,7 +127,7 @@ type Parser interface {
 	Parse(input *State) (result any, err error)
 }
 
-// New created new Parser
+// New creates new Parser
 //
 // terminals can be defined with NewTerm or NewWhitespace
 //

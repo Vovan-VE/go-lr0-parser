@@ -9,7 +9,7 @@ import (
 func TestGrammar(t *testing.T) {
 	var (
 		terminals = []Terminal{
-			NewTerm(tInt, "integer").Func(matchDigits),
+			NewTerm(tInt, "integer").FuncByte(isDigit, bytesToInt),
 			NewTerm(tPlus, "plus").Hide().Str("+"),
 			NewTerm(tMinus, "minus").Hide().Str("-"),
 		}

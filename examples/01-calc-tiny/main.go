@@ -21,7 +21,7 @@ const (
 
 var parser = lr0.New(
 	[]lr0.Terminal{
-		lr0.NewTerm(tInt, "int").Func(matchDigits),
+		lr0.NewTerm(tInt, "int").FuncByte(isDigit, bytesToInt),
 		lr0.NewTerm(tPlus, `"+"`).Hide().Str("+"),
 		lr0.NewTerm(tMinus, `"-"`).Hide().Str("-"),
 	},
@@ -44,28 +44,15 @@ func main() {
 		return
 	}
 	for i, input := range os.Args[1:] {
-		fmt.Printf("%d> %s", i, input)
+		fmt.Printf("%d> %s\t=> ", i, input)
 		result, err := parser.Parse(lr0.NewState([]byte(input)))
 		if err != nil {
-			fmt.Println("\t=> Error:", err)
+			fmt.Println("Error:", err)
 		} else {
-			fmt.Println("\t=>", result)
+			fmt.Println(result)
 		}
 	}
 }
 
-func matchDigits(state *lr0.State) (next *lr0.State, value any) {
-	st, b := state.TakeBytesFunc(isDigit)
-	if b == nil {
-		return
-	}
-	next = st
-
-	value, err := strconv.Atoi(string(state.BytesTo(next)))
-	if err != nil {
-		value = err
-	}
-	return
-}
-
-func isDigit(b byte) bool { return b >= '0' && b <= '9' }
+func isDigit(b byte) bool              { return b >= '0' && b <= '9' }
+func bytesToInt(b []byte) (int, error) { return strconv.Atoi(string(b)) }

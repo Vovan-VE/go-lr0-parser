@@ -3,6 +3,7 @@ package lr0
 import (
 	"io"
 	"testing"
+	"unicode"
 
 	"github.com/pkg/errors"
 	"github.com/vovan-ve/go-lr0-parser/internal/testutils"
@@ -24,7 +25,7 @@ func TestLexer_New(t *testing.T) {
 		NewTerm(tPlus, "Plus").Str("+"),
 		NewTerm(tMinus, "Minus").Str("-"),
 
-		NewWhitespace().Func(matchWS),
+		NewWhitespace().FuncRune(unicode.IsSpace),
 	)
 	if len(l.terminals) != 3 {
 		t.Errorf("what just happened? %#v", l.terminals)
@@ -44,13 +45,13 @@ func TestLexer_New(t *testing.T) {
 
 func TestLexer_Match(t *testing.T) {
 	l := newLexer(
-		NewTerm(tInt, "Int").Func(matchDigitsStr),
+		NewTerm(tInt, "Int").FuncByte(isDigit, toString),
 		// ++ first, + after
 		NewTerm(tInc, "Increment").Str("++"),
 		NewTerm(tPlus, "Plus").Str("+"),
 		NewTerm(tMinus, "Minus").Str("-"),
 
-		NewWhitespace().Func(matchWS),
+		NewWhitespace().FuncRune(unicode.IsSpace),
 	)
 
 	start := NewState([]byte("38+23 - \n 19++"))

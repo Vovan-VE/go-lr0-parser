@@ -3,6 +3,7 @@ package lr0
 import (
 	"strings"
 	"testing"
+	"unicode"
 
 	"github.com/pkg/errors"
 )
@@ -10,13 +11,13 @@ import (
 func TestParser(t *testing.T) {
 	p := newParser(newGrammar(
 		[]Terminal{
-			NewTerm(tInt, "int").Func(matchDigits),
+			NewTerm(tInt, "int").FuncByte(isDigit, bytesToInt),
 			NewTerm(tPlus, `"+"`).Hide().Str("+"),
 			NewTerm(tMinus, `"-"`).Hide().Str("-"),
 			NewTerm(tMul, `"*"`).Hide().Str("*"),
 			NewTerm(tDiv, `"/"`).Hide().Str("/"),
 
-			NewWhitespace().Func(matchWS),
+			NewWhitespace().FuncRune(unicode.IsSpace),
 		},
 		[]NonTerminalDefinition{
 			NewNT(nGoal, "Goal").Main().Is(nSum),
