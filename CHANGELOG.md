@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (DEV)
+## 0.1.0 (2023-11-06)
 
 - Add: A `Terminal` can now be defined with more trivial callbacks. The
   `*TerminalFactory` now has `FuncByte()` and `FuncRune()`:
